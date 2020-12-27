@@ -1,0 +1,10 @@
+Folders:
+	> Ref: containing helpful pics and links
+	> tools: containg the masm.exe, link.exe ....
+
+
+IF YOU WANT to run your program run the following commands:
+	> [1]: mount the FOLDER then navigate to it*
+	> tools\MASM.EXE CODE.ASM
+	> tools\LINK>EXE CODE.OBJ
+	> CODE.EXE
