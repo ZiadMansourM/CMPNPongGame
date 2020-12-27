@@ -27,14 +27,19 @@
     PADDLE_HEIGHT dw 1Fh                        ;  PADDLE Height (how many rows)
 ;   PADDEL VELOCITY
     PADDLE_VELOCITY dw 05h                      ; Paddel Vertical Velocity
+;   VARS USED in GAVE_OVER Page
+    msg db 'GAME OVER'
+    STR_LENGTH EQU 15
 ;   SCORE VARS
+    OPEN_PRACIKT db ' ('
     LEFT_PLAYER_SCORE db 30h                    ; score of the player at the left
     CONCATINATE db ':'                          ; used to display the score    
     RIGHT_PLAYER_SCORE db 30h                   ; score of the player at the right
     SCORE_LENGTH EQU 3                          ; used to display the score
-;   VARS USED in GAVE_OVER Page
-    msg db 'GAME OVER'
-    STR_LENGTH EQU 9
+    CLOSE_PRACIKT db ')'
+;   LEVEL number
+    SCORE_LIMIT db 35h
+    LEVEL db 00h 
 .code 
     main proc
         mov ax,@data
@@ -63,14 +68,23 @@
             call DRAW_SCORE
 
 ;           if reached the limit score of level one
-            cmp LEFT_PLAYER_SCORE, 35h
+            mov al, SCORE_LIMIT
+            cmp LEFT_PLAYER_SCORE, al
             JE NEXT_LEVEL
-            cmp RIGHT_PLAYER_SCORE, 35h
+            mov al, SCORE_LIMIT
+            cmp RIGHT_PLAYER_SCORE, al
             JE NEXT_LEVEL
 
             jmp CHECK_TIME                         ; loop again
 
-            NEXT_LEVEL:
+        NEXT_LEVEL:
+            cmp LEVEL, 01h
+            JE GAME_OVER_ALERT
+            mov BALL_VELOCITY_X, 09h
+            mov LEVEL, 01h
+            mov SCORE_LIMIT, 39h
+            jmp CHECK_TIME
+        GAME_OVER_ALERT:
             call CLEAR_SCREEN
             call GAME_OVER
 
@@ -487,7 +501,7 @@ GAME_OVER PROC NEAR
     mov bh, 0                        ;page number=always zero
     mov bl, 0Fh                      ;color of the text (white foreground 1111 and black background 0000 )
     mov cx, STR_LENGTH               ;length of string
-    mov dl, 15                       ;Column 0 > 39
+    mov dl, 12                       ;Column 0 > 39
     mov dh, 12                       ;Row    0 > 24
     mov bp, offset msg               ;mov bp the offset of the string
     int 10h
