@@ -6,6 +6,7 @@ msg db 'hello'
 LEFT_PLAYER_SCORE db 30h
 CONCATINATE db ':'
 RIGHT_PLAYER_SCORE db 30h
+SCORE_LENGTH EQU 3h
 ;   VARS TO CONTROL MOVEMENT
 OLD_TIME DB 0                               ; old time
 
