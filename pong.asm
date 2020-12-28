@@ -4,7 +4,7 @@
 .data
 ;   VARS TO CONTROLL COLLESION
     WINDOW_WIDTH dw 140h                        ; 320 Pixels
-    WINDOW_HEIGHT dw 78h                       ; 120 Pixels
+    WINDOW_HEIGHT dw 78h                        ; 120 Pixels
     WINDOW_BOUNDS DW 6h                         ; to check collesion early
 ;   VARS TO CONTROL MOVEMENT
     OLD_TIME DB 0                               ; old time
@@ -40,13 +40,19 @@
 ;   LEVEL number
     SCORE_LIMIT db 35h
     LEVEL db 00h 
+;   Player user name
+    WLCOME_MSG db 'Please Enter your Name:', 10, 13, ' > ', '$'
+    MY_USER_NAME db 15, ?, 15 dup('$')
+    WLCOME_MSG_LENGTH EQU 28
+    LAST_MSG db 10, 13, 'Please Press any key to continue...', '$'
 .code 
     main proc
         mov ax,@data
         mov ds, ax
         
-        call CLEAR_SCREEN               
-        
+        call USER_NAME
+        call CLEAR_SCREEN
+
         CHECK_TIME:
 ;           get system time, more information @"http://spike.scu.edu.au/~barry/interrupts.html#ah2c"
             mov ah, 2Ch                            ; get the system time
@@ -59,13 +65,12 @@
             call CLEAR_SCREEN                      ; we create the Illosion of movement by "Clear - move - draw - clear ...." 
 
             call MOV_BALL                          ; move the ball
-            ;call DRAW_SCORE
             call DRAW_BALL                         ; draw the ball
 
             call MOVE_PADDLES                      ; move paddles
             call DRAW_PADDLES                      ; draw paddles
 
-            call DRAW_SCORE
+            call DRAW_SCORE                        ; draw score
 
 ;           if reached the limit score of level one
             mov al, SCORE_LIMIT
@@ -96,7 +101,26 @@
             int 21h                                ; Excute according to the above configurations "ah" > return to the operating system
     main endp
 
-
+USER_NAME PROC NEAR
+    mov ah, 0h                                  ; set video mode
+    mov al, 00h                                 ; configure video mode settings
+    int 10h 
+    ;set welcom msg
+    mov ah , 09h
+    mov dx, offset WLCOME_MSG
+    int 21h
+;   Wait user input
+    mov ah, 0Ah
+    mov dx, offset MY_USER_NAME
+    int 21h
+;   Press any key to continue
+    mov ah , 09h
+    mov dx, offset LAST_MSG
+    int 21h
+    mov ah, 00H
+    int 16h
+    ret
+USER_NAME ENDP
 ;   this procedure handels all the logic behind setting the ball's position
     MOV_BALL PROC NEAR                           
 
