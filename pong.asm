@@ -4,7 +4,7 @@
 .data
 ;   VARS TO CONTROLL COLLESION
     WINDOW_WIDTH dw 140h                        ; 320 Pixels
-    WINDOW_HEIGHT dw 0C8h                       ; 200 Pixels
+    WINDOW_HEIGHT dw 78h                       ; 120 Pixels
     WINDOW_BOUNDS DW 6h                         ; to check collesion early
 ;   VARS TO CONTROL MOVEMENT
     OLD_TIME DB 0                               ; old time
@@ -59,7 +59,7 @@
             call CLEAR_SCREEN                      ; we create the Illosion of movement by "Clear - move - draw - clear ...." 
 
             call MOV_BALL                          ; move the ball
-            call DRAW_SCORE
+            ;call DRAW_SCORE
             call DRAW_BALL                         ; draw the ball
 
             call MOVE_PADDLES                      ; move paddles
@@ -79,10 +79,10 @@
 
         NEXT_LEVEL:
             cmp LEVEL, 01h
-            JE GAME_OVER_ALERT
-            mov BALL_VELOCITY_X, 09h
-            mov LEVEL, 01h
-            mov SCORE_LIMIT, 39h
+            JE GAME_OVER_ALERT                     
+            mov BALL_VELOCITY_X, 09h               ; old value was 5
+            mov LEVEL, 01h                         ; previous value was 0
+            mov SCORE_LIMIT, 39h                   ; 39 = '9', previous value was 35h = '5'
             jmp CHECK_TIME
         GAME_OVER_ALERT:
             call CLEAR_SCREEN
@@ -309,15 +309,11 @@ DRAW_SCORE ENDP
 ;       check if a player is trying to move the right paddle
         CHECK_RIGHT_PADDLE_MOVEMENT:
         ;;;;;;;;;;;;;;;;;; WHICH KEY WAS PRESSED ;;;;;;;;;;;;;;;;;
-        ;   check if 'o', 'O' was pressed
-            CMP al, 6Fh                             ; 'o' = 6Fh
-            je MOVE_RIGHT_PADDLE_UP                 ; move the right paddle up
-            CMP al, 4Fh                             ; 'O' = 4Fh
+        ;   check if up_arrow key was pressed
+            CMP ah, 72                              ; 72 is the scan code of the up arrow key
             je MOVE_RIGHT_PADDLE_UP                 ; move the right paddle up
         ;   check if 's', 'S' was pressed
-            CMP al, 6Ch                             ; 'l' = 6Ch 
-            je MOVE_RIGHT_PADDLE_DOWN               ; move the right paddle down
-            CMP al, 4Ch                             ; 'L' = 4Ch
+            CMP ah, 80                              ; 80 is the scan code of the down arrow key 
             je MOVE_RIGHT_PADDLE_DOWN               ; move the right paddle down
         ;   Nothing of the expecting keys THEN {EXIT;}
             JMP EXIT_PROC
