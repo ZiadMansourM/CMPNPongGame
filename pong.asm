@@ -88,7 +88,7 @@
         NEXT_LEVEL:
             cmp LEVEL, 01h
             JE GAME_OVER_ALERT                     
-            mov BALL_VELOCITY_X, 09h               ; old value was 5
+            mov BALL_VELOCITY_X, 07h               ; old value was 5
             mov LEVEL, 01h                         ; previous value was 0
             mov SCORE_LIMIT, 39h                   ; 39 = '9', previous value was 35h = '5'
             call CLEAR_SCREEN
@@ -341,7 +341,7 @@ DRAW_SCORE ENDP
         ;   check if up_arrow key was pressed
             CMP ah, 72                              ; 72 is the scan code of the up arrow key
             je MOVE_RIGHT_PADDLE_UP                 ; move the right paddle up
-        ;   check if 's', 'S' was pressed
+        ;   check if down_arrow was pressed
             CMP ah, 80                              ; 80 is the scan code of the down arrow key 
             je MOVE_RIGHT_PADDLE_DOWN               ; move the right paddle down
         ;   Nothing of the expecting keys THEN {EXIT;}
