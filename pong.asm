@@ -399,7 +399,7 @@ DRAW_SCORE ENDP
         DRAW_BALL_HORIZANTAL:
 ;           Configure the screen to the draw pexil mode
             mov ah, 0Ch                             ; draw pixil mode
-            mov al, 0Fh                             ; white color (ball)
+            mov al, 0Eh                             ; white color (ball)
             mov bh, 00h                             ; set page number
             int 10h                                 ; Excute according to the above configurations "ah, al, bh"
             
