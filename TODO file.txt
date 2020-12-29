@@ -4,10 +4,10 @@
 [4]: modifiy USER_NAME window  +++
 [5]: Graphics of Level 1 & Level 2
 	* PADDLES: 
-		> Higher Score green
-		> lower score red
+		> Higher Score green  DONE
+		> lower score red     DONE
 		> Score display colors && more than 9
-	* Transition betwwen level 1 & 2
+	* Transition betwwen level 1 & 2  DONE
 	* bonus ball ⚽ Fire 🔥 in draw
 	* Try video mode 04h
 [6]: Cards
@@ -16,6 +16,8 @@
 	> If the difference in score >= 6 {PADDLE_LENGTH++;} && GAME_OVER window ::: Mainly: our game supports disp =< 9 till now
 [7]: In_Game_Chat Bar ++++
 [8]: Try fix lag while Two Players are trying to move  ***
+
+BUG: ball enters inside the left paddle in level 2 
 ----------------------------------------------------------------------------------------------------------------------------------
 [7, 2, 4, 1]: 
 [3, 8]:

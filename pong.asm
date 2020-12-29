@@ -45,6 +45,9 @@
     MY_USER_NAME db 15, ?, 15 dup('$')
     WLCOME_MSG_LENGTH EQU 28
     LAST_MSG db 10, 13, 'Please Press any key to continue...', '$'
+;   Transition between level One and Two
+    trans_msg db 'LEVEL "2"'
+    trans_msg_LENGTH EQU 9
 .code 
     main proc
         mov ax,@data
@@ -88,6 +91,8 @@
             mov BALL_VELOCITY_X, 09h               ; old value was 5
             mov LEVEL, 01h                         ; previous value was 0
             mov SCORE_LIMIT, 39h                   ; 39 = '9', previous value was 35h = '5'
+            call CLEAR_SCREEN
+            call TRANSITION
             jmp CHECK_TIME
         GAME_OVER_ALERT:
             call CLEAR_SCREEN
@@ -553,5 +558,30 @@ GAME_OVER PROC NEAR
     ret
 
 GAME_OVER ENDP
+
+TRANSITION PROC NEAR
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    mov si, @data                    ;moves to si the location in memory of the data segment
+    mov es, si                       ;moves to es the location in memory of the data segment
+    mov ah, 13h                      ;service to print string in graphic mode
+    mov al, 0                        ;sub-service 0 all the characters will be in the same color(bl) and cursor position is not updated after the string is written
+    mov bh, 0                        ;page number=always zero
+    mov bl, 0Fh                      ;color of the text (white foreground 1111 and black background 0000 )
+    mov cx, trans_msg_LENGTH         ;length of string
+    mov dl, 16                       ;Column 0 > 39
+    mov dh, 12                       ;Row    0 > 24
+    mov bp, offset trans_msg         ;mov bp the offset of the string
+    int 10h
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    USER_INPUT:
+        mov ah, 00h
+        int 16h
+;       users presses Enter
+        cmp ah, 28
+        JNZ USER_INPUT
+    ret
+
+TRANSITION ENDP
 
 end main
