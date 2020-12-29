@@ -436,7 +436,19 @@ DRAW_SCORE ENDP
         DRAW_PADDLE_LEFT_HORIZANTAL:
 ;           Configure the screen to the draw pexil mode
             mov ah, 0Ch                             ; draw pixil mode
+            mov al, RIGHT_PLAYER_SCORE
+            cmp LEFT_PLAYER_SCORE, al
+            JG GREEN_LEFT
+            JL RED_LEFT
             mov al, 0Fh                             ; white color (paddle)
+            jmp WHIET_LEFT
+            GREEN_LEFT:
+            mov al, 02h                             ; green color
+            jmp WHIET_LEFT
+            RED_LEFT:
+            mov al, 04h                             ; RED color
+            jmp WHIET_LEFT
+            WHIET_LEFT:
             mov bh, 00h                             ; set page number
             int 10h                                 ; Excute according to the above configurations "ah, al, bh"
 
@@ -466,7 +478,19 @@ DRAW_SCORE ENDP
         DRAW_PADDLE_RIGHT_HORIZANTAL:
 ;           Configure the screen to the draw pexil mode
             mov ah, 0Ch                             ; draw pixil mode
+            mov al, LEFT_PLAYER_SCORE
+            cmp RIGHT_PLAYER_SCORE, al
+            JG GREEN_RIGHT
+            JL RED_RIGHT
             mov al, 0Fh                             ; white color (paddle)
+            jmp WHIET_RIGHT
+            GREEN_RIGHT:
+            mov al, 02h                             ; green color
+            jmp WHIET_RIGHT
+            RED_RIGHT:
+            mov al, 04h                             ; RED color
+            jmp WHIET_RIGHT
+            WHIET_RIGHT:
             mov bh, 00h                             ; set page number
             int 10h                                 ; Excute according to the above configurations "ah, al, bh"
 
