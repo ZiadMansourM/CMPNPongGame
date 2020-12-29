@@ -1,0 +1,23 @@
+[1]: Main Menu  ++++
+[2]: Status Bar "Is Names a must"  +++
+[3]: intial position of ball & "pause game" feature  ***
+[4]: modifiy USER_NAME window  +++
+[5]: Graphics of Level 1 & Level 2
+	* PADDLES: 
+		> Higher Score green
+		> lower score red
+		> Score display colors && more than 9
+	* Transition betwwen level 1 & 2
+	* bonus ball ⚽ Fire 🔥 in draw
+	* Try video mode 04h
+[6]: Cards
+	> 2 point after 10 saves in a row "FIX BUG: DISPSCORE & SCORE LIMIT"
+	> freez DISCS
+	> If the difference in score >= 6 {PADDLE_LENGTH++;} && GAME_OVER window ::: Mainly: our game supports disp =< 9 till now
+[7]: In_Game_Chat Bar ++++
+[8]: Try fix lag while Two Players are trying to move  ***
+----------------------------------------------------------------------------------------------------------------------------------
+[7, 2, 4, 1]: 
+[3, 8]:
+[5]: Ziad
+[6]:
