@@ -2,52 +2,59 @@
 .model small 
 .stack 64
 .data
-;   VARS TO CONTROLL COLLESION
+;   ========== VARS TO CONTROLL COLLESION ==========
     WINDOW_WIDTH dw 140h                        ; 320 Pixels
     WINDOW_HEIGHT dw 78h                        ; 120 Pixels
     WINDOW_BOUNDS DW 6h                         ; to check collesion early
-;   VARS TO CONTROL MOVEMENT
+;   ========== VARS TO CONTROL MOVEMENT ==========
     OLD_TIME DB 0                               ; old time
     BALL_ORIGINAL_X DW 0A0H                     ; X-position of the point of the center 
     BALL_ORIGINAL_Y DW 64H                      ; Y-position of the point of the center 
-;   VARS TO DROW BALL
+;   ========== VARS TO DROW BALL ==========
     BALL_X DW 0Ah                               ; "BALL" X position (cloumn)
     BALL_Y DW 0Ah                               ; "BALL" y position (row - line)
     BALL_SIZE DW 04h                            ; SIze of the ball 4-x 4-y
     BALL_VELOCITY_X DW 05h                      ; X-Velocity of the ball (Horizantal)
     BALL_VELOCITY_Y DW 02h                      ; Y-Velocity of the ball (Vertical)
-;   VARS TO DROW LEFT_PADDELS
+;   ========== VARS TO DROW LEFT_PADDELS ==========
     PADDLE_LEFT_X dw 0Ah                        ; "LEFT-PADDLE" X position (cloumn)
     PADDLE_LEFT_Y DW 0Ah                        ; "LEFT-PADDLE" y position (row - line)
-;   VARS TO DROW RIGHT_PADDELS
+;   ========== VARS TO DROW RIGHT_PADDELS ==========
     PADDLE_RIGHT_X dw 130h                      ; "RIGHT-PADDLE" X position (cloumn)
     PADDLE_RIGHT_Y DW 0Ah                       ; "RIGHT-PADDLE" y position (row - line)
-;   PADDELS SIZE
+;   ========== PADDELS SIZE ==========
     PADDLE_WIDTH dw 05h                         ;  PADDLE Width  (how many columns)
     PADDLE_HEIGHT dw 1Fh                        ;  PADDLE Height (how many rows)
-;   PADDEL VELOCITY
+;   ========== PADDEL VELOCITY ==========
     PADDLE_VELOCITY dw 05h                      ; Paddel Vertical Velocity
-;   VARS USED in GAVE_OVER Page
+;   ========== VARS USED in GAVE_OVER Page ==========
     msg db 'GAME OVER'
     STR_LENGTH EQU 15
-;   SCORE VARS
+;   ========== SCORE VARS ==========
     OPEN_PRACIKT db ' ('
     LEFT_PLAYER_SCORE db 30h                    ; score of the player at the left
     CONCATINATE db ':'                          ; used to display the score    
     RIGHT_PLAYER_SCORE db 30h                   ; score of the player at the right
     SCORE_LENGTH EQU 3                          ; used to display the score
     CLOSE_PRACIKT db ')'
-;   LEVEL number
+;   ========== LEVEL number ==========
     SCORE_LIMIT db 35h
     LEVEL db 00h 
-;   Player user name
-    WLCOME_MSG db 'Please Enter your Name:', 10, 13, ' > ', '$'
+;   ========== Player user name ==========
+    WLCOME_MSG db 'Please Enter your Name:', 10, 9, 9, 9, 9, '$'
     MY_USER_NAME db 15, ?, 15 dup('$')
     WLCOME_MSG_LENGTH EQU 28
-    LAST_MSG db 10, 13, 'Please Press any key to continue...', '$'
-;   Transition between level One and Two
+    LAST_MSG db 'Please Press any key to continue', '$'
+;   ========== Transition between level One and Two ==========
     trans_msg db 'LEVEL "2"'
     trans_msg_LENGTH EQU 9
+;   ========== Main Screen variables ==========
+    start_chatting_msg db '*To Start chatting press F1','$'
+    start_PongGame_msg db 10,'*To Start Pong game press F2','$'
+    end_game_msg db 10,'*To end the program press ESC','$'
+    start_row db 9
+    start_column db 25
+
 .code 
     main proc
         mov ax,@data
@@ -105,27 +112,44 @@
             mov ah,04ch                            ; "INT 21h, ah=04Ch" return to the operating system
             int 21h                                ; Excute according to the above configurations "ah" > return to the operating system
     main endp
-
+    
+;========================================================================== USER NAME PROCEDURE ==========================================================================
 USER_NAME PROC NEAR
     mov ah, 0h                                  ; set video mode
-    mov al, 00h                                 ; configure video mode settings
+    mov al, 03h                                 ; configure video mode settings
     int 10h 
-    ;set welcom msg
+;Set cursor position to row 9 and column 25 and print welcome message 
+    mov ah, 02h                      	; int 10h on ah = 02h => Set cursor position
+	mov dh, start_row                	; row 9
+	mov dl, start_column             	; column 25
+	int 10h
     mov ah , 09h
     mov dx, offset WLCOME_MSG
     int 21h
-;   Wait user input
+
+;Wait user to enter a name 
     mov ah, 0Ah
     mov dx, offset MY_USER_NAME
     int 21h
-;   Press any key to continue
+
+;Set cursor position to row 9 and column 25 and print this message 'Press any key to continue'
+    mov ah, 02h                      	; int 10h on ah = 02h => Set cursor position
+    mov cl, start_row
+    add cl, 2                           ; move 2 lines downwards
+	mov dh, cl                      	; row 13
+	mov dl, start_column                ; column 25
+	int 10h
     mov ah , 09h
     mov dx, offset LAST_MSG
     int 21h
+
+;Read any key to continue  
     mov ah, 00H
     int 16h
     ret
 USER_NAME ENDP
+
+;========================================================================== MOVE BALL PROCEDURE ==========================================================================
 ;   this procedure handels all the logic behind setting the ball's position
     MOV_BALL PROC NEAR                           
 
@@ -255,7 +279,7 @@ USER_NAME ENDP
 
     MOV_BALL ENDP
 
-
+;========================================================================== DRAW SCORE PROCEDURE ==========================================================================
 DRAW_SCORE PROC NEAR
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -275,7 +299,7 @@ DRAW_SCORE PROC NEAR
 
 DRAW_SCORE ENDP
 
-
+;========================================================================== MOVE PADDLES PROCEDURE ==========================================================================
 ;   this procedure handels all the logic behind setting the paddles' positions
     MOVE_PADDLES PROC NEAR
 
@@ -382,7 +406,7 @@ DRAW_SCORE ENDP
 
     MOVE_PADDLES ENDP
 
-
+;======================================================================= RESET BALL POSITION PROCEDURE =======================================================================
 ;   this ptocedure recet the ball to the center of the screen
     RESET_BALL_POSITION PROC NEAR
 
@@ -394,7 +418,7 @@ DRAW_SCORE ENDP
 
     RESET_BALL_POSITION ENDP
 
-
+;========================================================================== DRAW BALL PROCEDURE ==========================================================================
 ;   This procedure handels all the logic behind drawing the ball
     DRAW_BALL PROC NEAR
 
@@ -430,7 +454,7 @@ DRAW_SCORE ENDP
 
     DRAW_BALL ENDP
 
-
+;========================================================================== DRAW PADDLES PROCEDURE ==========================================================================
 ;   This procedure handels all the logic behind drawing the paddles
     DRAW_PADDLES PROC NEAR
 
@@ -522,7 +546,7 @@ DRAW_SCORE ENDP
 
     DRAW_PADDLES ENDP
 
-
+;========================================================================== CLEAR SCREEN PROCEDURE ==========================================================================
 ;   This procedure helps in creating the Illosion of movement by clearing the screen 
     CLEAR_SCREEN PROC NEAR
 
@@ -539,7 +563,8 @@ DRAW_SCORE ENDP
         ret
 
     CLEAR_SCREEN ENDP
-
+    
+;========================================================================== GAME OVER PROCEDURE ==========================================================================
 GAME_OVER PROC NEAR
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -559,6 +584,7 @@ GAME_OVER PROC NEAR
 
 GAME_OVER ENDP
 
+;========================================================================== TRANSITION PROCEDURE ==========================================================================
 TRANSITION PROC NEAR
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
