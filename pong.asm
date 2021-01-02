@@ -50,8 +50,8 @@
     trans_msg_LENGTH EQU 9
 ;   ========== Main Screen variables ==========
     start_chatting_msg db '*To Start chatting press F1','$'
-    start_PongGame_msg db 10,'*To Start Pong game press F2','$'
-    end_game_msg db 10,'*To end the program press ESC','$'
+    start_PongGame_msg db '*To Start Pong game press F2','$'
+    end_game_msg db '*To end the program press ESC','$'
     start_row db 9
     start_column db 25
 
@@ -59,7 +59,67 @@
     main proc
         mov ax,@data
         mov ds, ax
-        
+;======================================================= MAIN MENU =======================================================
+         mov ah, 00h                      	; set video mode
+	     mov al, 03h                      	; configure video mode settings (text mode 25 rows and 80 column)
+	     int 10h
+
+	;Set cursor position to row 9 and column 25 and print offset message (start chatting)
+	     mov ah, 02h                      	; int 10h on ah = 02h => Set cursor position
+	     mov dh, start_row                	; row 9
+	     mov dl, start_column             	; column 25
+	     int 10h
+	     mov ah, 09h
+	     mov dx, offset start_chatting_msg
+	     int 21h
+	;Set cursor position to row 13 and column 25 and print offset message (start game)
+	     mov ah, 02h
+	     mov cl,start_row
+	     add cl,2
+	     mov dh, cl                       	; row 11
+	     mov dl, start_column             	; column 25
+	     int 10h
+	     mov ah, 09h
+	     mov dx, offset start_PongGame_msg
+	     int 21h
+	;Set cursor position to row 11 and column 25 and print offset message (end program)
+	     mov ah, 02h
+	     mov cl,start_row
+	     add cl,4
+	     mov dh, cl                       	; row 13
+	     mov dl, start_column             	; column 25
+	     int 10h
+	     mov ah, 09h
+	     mov dx, offset end_game_msg
+	     int 21h
+	;Set cursor position to row 22 and column 0 and print a dashed line
+	     mov ah, 02h
+	     mov dh, 22                       	; row 22
+	     mov dl, 0                        	; column 0
+	     int 10h
+	     mov ah, 0Ah                        ; int 10h on ah = 0Ah => write character at cursor position
+	     mov cx, 80                         ; number of repetitions of the character '-'
+	     mov al, '-'                        ; character to be printed stored in al
+	     int 10h
+
+CHECK_AGAIN_ON_KEYPRESSED:
+         mov ah,00h                         ; get keypress from user
+         int 16h
+         ;cmp ah, 03Bh                      ; Check if F1 was pressed (Scan code of F1 = 3B )
+         ;JZ CHATTING_MODE 
+         cmp ah, 03Ch                      ; Check if F2 was pressed (Scan code of F2 = 3C )
+         JZ GAME_MODE 
+         cmp ah, 01h                        ; Check if ESC was pressed (Scan code of ESC = 01 )
+         JZ EXIT2 
+; else none of the keys corresponds to a valid command (take a keypress again)
+		 jmp CHECK_AGAIN_ON_KEYPRESSED
+
+    EXIT2:
+	     mov ah, 04ch
+		 int 21h
+;======================================================= MAIN MENU END =======================================================
+
+GAME_MODE:
         call USER_NAME
         call CLEAR_SCREEN
 
