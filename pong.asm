@@ -115,13 +115,13 @@
     
 ;========================================================================== USER NAME PROCEDURE ==========================================================================
 USER_NAME PROC NEAR
-    mov ah, 0h                                  ; set video mode
-    mov al, 03h                                 ; configure video mode settings
+    mov ah, 0h                                     ; set video mode
+    mov al, 03h                                    ; configure video mode settings
     int 10h 
 ;Set cursor position to row 9 and column 25 and print welcome message 
-    mov ah, 02h                      	; int 10h on ah = 02h => Set cursor position
-	mov dh, start_row                	; row 9
-	mov dl, start_column             	; column 25
+    mov ah, 02h                      	           ; int 10h on ah = 02h => Set cursor position
+	mov dh, start_row                	   ; row 9
+	mov dl, start_column                   	   ; column 25
 	int 10h
     mov ah , 09h
     mov dx, offset WLCOME_MSG
@@ -133,11 +133,11 @@ USER_NAME PROC NEAR
     int 21h
 
 ;Set cursor position to row 9 and column 25 and print this message 'Press any key to continue'
-    mov ah, 02h                      	; int 10h on ah = 02h => Set cursor position
+    mov ah, 02h                      	          ; int 10h on ah = 02h => Set cursor position
     mov cl, start_row
-    add cl, 2                           ; move 2 lines downwards
-	mov dh, cl                      	; row 13
-	mov dl, start_column                ; column 25
+    add cl, 2                                     ; move 2 lines downwards
+	mov dh, cl                      	  ; row 13
+	mov dl, start_column                      ; column 25
 	int 10h
     mov ah , 09h
     mov dx, offset LAST_MSG
