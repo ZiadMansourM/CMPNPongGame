@@ -40,26 +40,32 @@
 ;   ========== LEVEL number ==========
     SCORE_LIMIT db 35h
     LEVEL db 00h 
-;   Player user name
-    WLCOME_MSG         db  'Please Enter your Name:', 10, 9, 9, 9, 9, '$'
-    MY_USER_NAME       db  15, ?, 15 dup('$')
+;   ========== Player user name ==========
+    WLCOME_MSG_PLAYER1 db  'Please Enter your Name:', 10, 9, 9, 9, 9, '$'
+    WLCOME_MSG_PLAYER2 db  'Please Enter your Name:', 10, 9, 9, 9, 9, '$'
+    MY_USER_NAME_PLAYER1       db  15, ?, 15 dup('$')
+    MY_USER_NAME_PLAYER2       db  15, ?, 15 dup('$')
     WLCOME_MSG_LENGTH  EQU 28
     LAST_MSG           db  'Please Press any key to continue', '$'
     ERROR_NAME_MSG     db  10, 9, 'Your name should start with a letter, Please enter it again: ','$'
-;   Transition between level One and Two
+;   ========== Transition between level One and Two ==========
     trans_msg          db  'LEVEL "2"'
     trans_msg_LENGTH   EQU 9
-;   Main Screen variables
+;   ========== Main Screen variables ==========
     start_chatting_msg db  '*To Start chatting press F1','$'
     start_PongGame_msg db  '*To Start Pong game press F2','$'
     end_game_msg       db  '*To end the program press ESC','$'
-    start_row          db  9
-    start_column db 25
+    start_row          db  9                  ; row position of main menu message 
+    start_column       db 25                  ; row position of main menu message
 
 .code 
     main proc
         mov ax,@data
         mov ds, ax
+	
+	call USER_NAME_PLAYER1
+        call USER_NAME_PLAYER2
+	
 ;======================================================= MAIN MENU =======================================================
         mov ah, 00h                      	; set video mode
 	mov al, 03h                      	; configure video mode settings (text mode 25 rows and 80 column)
@@ -121,7 +127,6 @@ CHECK_AGAIN_ON_KEYPRESSED:
 ;======================================================= MAIN MENU END =======================================================
 
 GAME_MODE:
-        call USER_NAME
         call CLEAR_SCREEN
 
         CHECK_TIME:
@@ -175,7 +180,8 @@ GAME_MODE:
     main endp
     
 ;========================================================================== USER NAME PROCEDURE ==========================================================================
-USER_NAME PROC NEAR
+;=============== Player 1 ===============
+USER_NAME_PLAYER1 PROC NEAR
 	                       mov ah, 0h                   	; set video mode
 	                       mov al, 03h                  	; configure video mode settings
 	                       int 10h
@@ -185,17 +191,17 @@ USER_NAME PROC NEAR
 	                       mov dl, start_column         	; column 25
 	                       int 10h
 	                       mov ah , 09h
-	                       mov dx, offset WLCOME_MSG
+	                       mov dx, offset WLCOME_MSG_PLAYER1
 	                       int 21h
 
 	;   Wait user input and validate it => should start with a letter
     ;   should exist between 41h 'A' - 5Ah 'Z' or between 61h 'a' - 7Ah 'z'
 	TAKE_INPUT_AGAIN:      
 	                       mov ah, 0Ah                      ; get input from user
-	                       mov dx, offset MY_USER_NAME
+	                       mov dx, offset MY_USER_NAME_PLAYER1
 	                       int 21h
 
-	                       mov ah, MY_USER_NAME[2]          ; move first character to ah to check on it
+	                       mov ah, MY_USER_NAME_PLAYER1[2]          ; move first character to ah to check on it
 
 	                       cmp ah, 'A'                      ; if character greater than 'A' => check if it is less than 'Z' 
 	                       JG  CHECK_LESS_CAPITAL_Z         ; else => check if it is between 'a' and 'z'
@@ -210,13 +216,13 @@ USER_NAME PROC NEAR
 	                       jmp TAKE_INPUT_AGAIN
 
 	CHECK_LESS_CAPITAL_Z:  
-	                       mov ah, MY_USER_NAME[2]
+	                       mov ah, MY_USER_NAME_PLAYER1[2]
 	                       cmp ah,'Z' 
 	                       JL  CONTINUE                    ; if character less than 'Z' => valid character and continue the program
 	                       jmp CHECK_SMALL_CHARACTERS      ; else => it could be lower case character => check them
 
 	CHECK_LESS_SMALL_Z:    
-	                       mov ah, MY_USER_NAME[2]
+	                       mov ah, MY_USER_NAME_PLAYER1[2]
 	                       cmp ah, 'z'
 	                       JL  CONTINUE                    ; if character less than 'Z' => valid character and continue the program
 	                       mov ah , 09h                    ; else => print error message and loop again
@@ -243,8 +249,78 @@ USER_NAME PROC NEAR
 	                       mov ah, 00H
 	                       int 16h
 	                       ret
-USER_NAME ENDP
+USER_NAME_PLAYER1 ENDP
 
+;=============== Player 2 ===============
+USER_NAME_PLAYER2 PROC NEAR
+	                       mov ah, 0h                   	; set video mode
+	                       mov al, 03h                  	; configure video mode settings
+	                       int 10h
+	;Set cursor position to row 9 and column 25 and print welcome message
+	                       mov ah, 02h                  	; int 10h on ah = 02h => Set cursor position
+	                       mov dh, start_row            	; row 9
+	                       mov dl, start_column         	; column 25
+	                       int 10h
+	                       mov ah , 09h
+	                       mov dx, offset WLCOME_MSG_PLAYER2
+	                       int 21h
+
+	;   Wait user input and validate it => should start with a letter
+    ;   should exist between 41h 'A' - 5Ah 'Z' or between 61h 'a' - 7Ah 'z'
+	TAKE_INPUT_AGAIN_P2:      
+	                       mov ah, 0Ah                      ; get input from user
+	                       mov dx, offset MY_USER_NAME_PLAYER2
+	                       int 21h
+
+	                       mov ah, MY_USER_NAME_PLAYER2[2]          ; move first character to ah to check on it
+
+	                       cmp ah, 'A'                      ; if character greater than 'A' => check if it is less than 'Z' 
+	                       JG  CHECK_LESS_CAPITAL_Z_P2         ; else => check if it is between 'a' and 'z'
+
+	CHECK_SMALL_CHARACTERS_P2:
+	                       cmp ah, 'a'                      ; if character greater than 'a' => check if it is less than 'z' 
+	                       JG  CHECK_LESS_SMALL_Z_P2           ; else => invalid character, take input again
+
+	                       mov ah , 09h
+	                       mov dx, offset ERROR_NAME_MSG    ; print error message and loop again
+	                       int 21h
+	                       jmp TAKE_INPUT_AGAIN_P2
+
+	CHECK_LESS_CAPITAL_Z_P2:  
+	                       mov ah, MY_USER_NAME_PLAYER2[2]
+	                       cmp ah,'Z' 
+	                       JL  CONTINUE_P2                    ; if character less than 'Z' => valid character and continue the program
+	                       jmp CHECK_SMALL_CHARACTERS_P2      ; else => it could be lower case character => check them
+
+	CHECK_LESS_SMALL_Z_P2:    
+	                       mov ah, MY_USER_NAME_PLAYER2[2]
+	                       cmp ah, 'z'
+	                       JL  CONTINUE_P2                    ; if character less than 'Z' => valid character and continue the program
+	                       mov ah , 09h                    ; else => print error message and loop again
+	                       mov dx, offset ERROR_NAME_MSG
+	                       int 21h
+	                       jmp TAKE_INPUT_AGAIN_P2
+        
+
+	CONTINUE_P2:              
+	;Set cursor position to row 9 and column 25 and print this message 'Press any key to continue'
+
+	                       mov ah,03h                       ; get cursor current position
+	                       int 10h
+
+	                       mov ah, 02h                  	; int 10h on ah = 02h => Set cursor position
+	                       add dh, 1                    	; row 13
+	                       mov dl, start_column         	; column 25
+	                       int 10h
+	                       mov ah , 09h
+	                       mov dx, offset LAST_MSG
+	                       int 21h
+
+	;Read any key to continue
+	                       mov ah, 00H
+	                       int 16h
+	                       ret
+USER_NAME_PLAYER2 ENDP
 ;========================================================================== MOVE BALL PROCEDURE ==========================================================================
 ;   this procedure handels all the logic behind setting the ball's position
     MOV_BALL PROC NEAR                           
