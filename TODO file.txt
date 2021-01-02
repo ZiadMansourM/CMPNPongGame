@@ -9,7 +9,7 @@
 		> Score display colors && more than 9
 	* Transition betwwen level 1 & 2  DONE
 	* bonus ball ⚽ Fire 🔥 in draw
-	* Try video mode 04h
+	* Try video mode 04h  DIDn't WORk
 [6]: Cards
 	> 2 point after 10 saves in a row "FIX BUG: DISPSCORE & SCORE LIMIT"
 	> freez DISCS

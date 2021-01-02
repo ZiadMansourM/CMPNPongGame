@@ -264,7 +264,7 @@ DRAW_SCORE PROC NEAR
     mov ah, 13h                      ;service to print string in graphic mode
     mov al, 0                        ;sub-service 0 all the characters will be in the same color(bl) and cursor position is not updated after the string is written
     mov bh, 0                        ;page number=always zero
-    mov bl, 00001111b                ;color of the text (white foreground 1111 and black background 0000 )
+    mov bl, 02h                ;color of the text (white foreground 1111 and black background 0000 )
     mov cx, SCORE_LENGTH             ;length of string
     mov dl, 18                       ;Column 0 > 39
     mov dh, 2                        ;Row    0 > 24
