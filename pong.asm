@@ -108,8 +108,8 @@ GAME_MODE:
 
 ;           clear screen to draw next frame
             call CLEAR_SCREEN                      ; we create the Illosion of movement by "Clear - move - draw - clear ...." 
-	    call STATUS_BAR
-	    mov ah,01h                          ; get keypress from user to check if user pressed F4
+            call STATUS_BAR
+            mov ah,01h                          ; get keypress from user to check if user pressed F4
             int 16h
             cmp ah, 03Eh                        ; Check if F4 was pressed (Scan code of F4 = 01 )
             JE START_GAME 
@@ -740,8 +740,9 @@ STATUS_BAR PROC NEAR
 	     mov dl, 0                        	; column 0
 	     int 10h
 	     mov ah, 0Ah                        ; int 10h on ah = 0Ah => write character at cursor position
-	     mov cx, 40                         ; number of repetitions of the character '-'
+	     mov cx, 80                         ; number of repetitions of the character '-'
 	     mov al, '-'                        ; character to be printed stored in al
+         mov bl, 0Ah                        ; Ziad: green color
 	     int 10h
 ; ========== Player 1 ==========
 ;Set cursor position to row 11 and column 0 and print the score of the players
@@ -841,7 +842,7 @@ STATUS_BAR PROC NEAR
 	     mov dl, 0                        	; column 0
 	     int 10h
 	     mov ah, 0Ah                        ; int 10h on ah = 0Ah => write character at cursor position
-	     mov cx, 40                         ; number of repetitions of the character '-'
+	     mov cx, 80                         ; number of repetitions of the character '-'
 	     mov al, '-'                        ; character to be printed stored in al
 	     int 10h
 
@@ -903,7 +904,7 @@ STATUS_BAR PROC NEAR
 STATUS_BAR ENDP 
 ;======================================================= MAIN MENU =======================================================
 MAIN_MENU PROC NEAR
-        mov ah, 00h                      	; set video mode
+    mov ah, 00h                      	; set video mode
 	mov al, 03h                      	; configure video mode settings (text mode 25 rows and 80 column)
 	int 10h
 
