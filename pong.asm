@@ -3,31 +3,36 @@
 .stack 64
 .data
 ;   ========== VARS TO CONTROLL COLLESION ==========
-    WINDOW_WIDTH dw 140h                        ; 320 Pixels
-    WINDOW_HEIGHT dw 78h                        ; 120 Pixels
+    WINDOW_WIDTH dw 280h                        ; 320 Pixels 640
+    WINDOW_HEIGHT dw 384                        ; 120 Pixels 480
     WINDOW_BOUNDS DW 6h                         ; to check collesion early
     STATUS_BAR_START_ROW db 16                  ; the start of the status bar
 ;   ========== VARS TO CONTROL MOVEMENT ==========
     OLD_TIME DB 0                               ; old time
-    BALL_ORIGINAL_X DW 0A0H                     ; X-position of the point of the center 
-    BALL_ORIGINAL_Y DW 64H                      ; Y-position of the point of the center 
+    BALL_ORIGINAL_X DW 320                     ; X-position of the point of the center 
+    BALL_ORIGINAL_Y DW 192                      ; Y-position of the point of the center 
 ;   ========== VARS TO DROW BALL ==========
-    BALL_X DW 0Ah                               ; "BALL" X position (cloumn)
-    BALL_Y DW 0Ah                               ; "BALL" y position (row - line)
-    BALL_SIZE DW 04h                            ; SIze of the ball 4-x 4-y
-    BALL_VELOCITY_X DW 05h                      ; X-Velocity of the ball (Horizantal)
-    BALL_VELOCITY_Y DW 02h                      ; Y-Velocity of the ball (Vertical)
+    BALL_X DW 320                               ; "BALL" X position (cloumn)
+    BALL_Y DW 192                               ; "BALL" y position (row - line)
+    BALL_SIZE DW 8h                            ; SIze of the ball 4-x 4-y
+    BALL_VELOCITY_X_ARR DW 05h,04h,03h,04h,02h,05h,03h
+    BALL_VELOCITY_X_ARR_2 DW 07h,03h,05h,04h,06h,02h,06h  
+    BALL_VELOCITY_X DW 05h                      
+    BALL_VELOCITY_Y_ARR DW 02h,04h,05h,03h,05h,03h,04h
+    BALL_VELOCITY_Y_ARR_2 DW 02h,06h,05h,06h,03h,07h,04h
+    BALL_VELOCITY_Y DW 02h                      
+    BALL_VELOCITY_CURRENT DW 0                  
 ;   ========== VARS TO DROW LEFT_PADDELS ==========
     PADDLE_LEFT_X dw 0Ah                        ; "LEFT-PADDLE" X position (cloumn)
     PADDLE_LEFT_Y DW 0Ah                        ; "LEFT-PADDLE" y position (row - line)
 ;   ========== VARS TO DROW RIGHT_PADDELS ==========
-    PADDLE_RIGHT_X dw 130h                      ; "RIGHT-PADDLE" X position (cloumn)
+    PADDLE_RIGHT_X dw 624                       ; "RIGHT-PADDLE" X position (cloumn)
     PADDLE_RIGHT_Y DW 0Ah                       ; "RIGHT-PADDLE" y position (row - line)
 ;   ========== PADDELS SIZE ==========
     PADDLE_WIDTH dw 05h                         ;  PADDLE Width  (how many columns)
-    PADDLE_HEIGHT dw 1Fh                        ;  PADDLE Height (how many rows)
+    PADDLE_HEIGHT dw 3Fh                        ;  PADDLE Height (how many rows)
 ;   ========== PADDEL VELOCITY ==========
-    PADDLE_VELOCITY dw 05h                      ; Paddel Vertical Velocity
+    PADDLE_VELOCITY dw 07h                      ; Paddel Vertical Velocity
 ;   ========== VARS USED in GAVE_OVER Page ==========
     msg db 'GAME OVER'
     STR_LENGTH EQU 17
@@ -117,20 +122,20 @@
 	int 10h
 
 CHECK_AGAIN_ON_KEYPRESSED:
-         mov ah,00h                             ; get keypress from user
-         int 16h
-         ;cmp ah, 03Bh                          ; Check if F1 was pressed (Scan code of F1 = 3B )
-         ;JZ CHATTING_MODE 
-         cmp ah, 03Ch                           ; Check if F2 was pressed (Scan code of F2 = 3C )
-         JZ GAME_MODE 
-         cmp ah, 01h                            ; Check if ESC was pressed (Scan code of ESC = 01 )
-         JZ EXIT2 
+        mov ah,00h                             ; get keypress from user
+        int 16h
+        ;cmp ah, 03Bh                          ; Check if F1 was pressed (Scan code of F1 = 3B )
+        ;JZ CHATTING_MODE 
+        cmp ah, 03Ch                           ; Check if F2 was pressed (Scan code of F2 = 3C )
+        JZ GAME_MODE 
+        cmp ah, 01h                            ; Check if ESC was pressed (Scan code of ESC = 01 )
+        JZ EXIT2 
 ; else none of the keys corresponds to a valid command (take a keypress again)
-		 jmp CHECK_AGAIN_ON_KEYPRESSED
+		jmp CHECK_AGAIN_ON_KEYPRESSED
 
     EXIT2:
-	     mov ah, 04ch
-		 int 21h
+        mov ah, 04ch
+        int 21h
 ;======================================================= MAIN MENU END =======================================================
 
 GAME_MODE:
@@ -167,8 +172,15 @@ GAME_MODE:
 
         NEXT_LEVEL:
             cmp LEVEL, 01h
-            JE GAME_OVER_ALERT                     
-            mov BALL_VELOCITY_X, 07h               ; old value was 5
+            JE GAME_OVER_ALERT
+            mov cx,7                    
+            mov di,offset BALL_VELOCITY_X_ARR
+            mov si,offset BALL_VELOCITY_X_ARR_2
+            REP MOVSW
+            mov cx,7                    
+            mov di,offset BALL_VELOCITY_Y_ARR
+            mov si,offset BALL_VELOCITY_Y_ARR_2
+            REP MOVSW
             mov LEVEL, 01h                         ; previous value was 0
             mov SCORE_LIMIT, 39h                   ; 39 = '9', previous value was 35h = '5'
             call CLEAR_SCREEN
@@ -365,10 +377,27 @@ USER_NAME_PLAYER2 ENDP
 ;       return if After setting the ball to center point as a result for hetting any of the left of right boundry 
         RESET_POSITION_LEFT:
             add RIGHT_PLAYER_SCORE_FD, 1
+            ADD BALL_VELOCITY_CURRENT,2
+            cmp BALL_VELOCITY_CURRENT,12h;
+            JLE CHANGING_VELOCITY
+            mov BALL_VELOCITY_CURRENT,0h
             call RESET_BALL_POSITION
             ret
         RESET_POSITION_RIGHT:
             add LEFT_PLAYER_SCORE_FD, 1
+            ADD BALL_VELOCITY_CURRENT,2
+            cmp BALL_VELOCITY_CURRENT,12h;
+            JLE CHANGING_VELOCITY
+            mov BALL_VELOCITY_CURRENT,0h
+            CHANGING_VELOCITY:
+            lea bx,BALL_VELOCITY_X_ARR
+            add bx,BALL_VELOCITY_CURRENT
+            mov ax,[bx]                           
+            mov BALL_VELOCITY_X,ax
+            lea bx,BALL_VELOCITY_Y_ARR
+            add bx,BALL_VELOCITY_CURRENT
+            mov ax,[bx]                   
+            mov BALL_VELOCITY_Y,ax
             call RESET_BALL_POSITION
             ret
         ;RESET_POSITION:
@@ -460,17 +489,16 @@ USER_NAME_PLAYER2 ENDP
 
 ;========================================================================== DRAW SCORE PROCEDURE ==========================================================================
 DRAW_SCORE PROC NEAR
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Draw Left Player Score ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     mov si, @data                    ;moves to si the location in memory of the data segment
     mov es, si                       ;moves to es the location in memory of the data segment
     mov ah, 13h                      ;service to print string in graphic mode
     mov al, 0                        ;sub-service 0 all the characters will be in the same color(bl) and cursor position is not updated after the string is written
     mov bh, 0                        ;page number=always zero
-    mov bl, 02h                ;color of the text (white foreground 1111 and black background 0000 )
+    mov bl, 0Ah                      ;color of the text (white foreground 1111 and black background 0000 )
     mov cx, SCORE_LENGTH             ;length of string
-    mov dl, 18                       ;Column 0 > 39
-    mov dh, 2                        ;Row    0 > 24
+    mov dl, 38                       ;Column 0 > 40
+    mov dh, 2                        ;Row    0 > 25
     mov bp, offset LEFT_PLAYER_SCORE_SD ;mov bp the offset of the string
     int 10h
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -651,7 +679,7 @@ DRAW_SCORE ENDP
             mov al, 0Fh                             ; white color (paddle)
             jmp WHIET_LEFT
             GREEN_LEFT:
-            mov al, 02h                             ; green color
+            mov al, 0Ah                             ; green color
             jmp WHIET_LEFT
             RED_LEFT:
             mov al, 04h                             ; RED color
@@ -693,7 +721,7 @@ DRAW_SCORE ENDP
             mov al, 0Fh                             ; white color (paddle)
             jmp WHIET_RIGHT
             GREEN_RIGHT:
-            mov al, 02h                             ; green color
+            mov al, 0Ah                             ; green color
             jmp WHIET_RIGHT
             RED_RIGHT:
             mov al, 04h                             ; RED color
@@ -729,13 +757,13 @@ DRAW_SCORE ENDP
 ;   This procedure helps in creating the Illosion of movement by clearing the screen 
     CLEAR_SCREEN PROC NEAR
 ;       set video mode, more information @"https://stanislavs.org/helppc/int_10-0.html"
-        mov ah, 0h                                  ; set video mode
-        mov al, 13h                                 ; configure video mode settings
+        mov ah, 00h                                  ; set video mode
+        mov al, 12h                                 ; configure video mode settings
         int 10h                                     ; Excute according to the above configurations "ah, al"
 ;       set backgroud, more information @"https://stanislavs.org/helppc/int_10-b.html"
         mov ah, 0bh                                 ; Set color palette
         mov bh, 00h                                 ; palette color ID - to set background and border color
-        mov al, 00h                                 ; black color 
+        mov bl, 00h                                 ; black color 
         int 10h                                     ; Excute according to the above configurations "ah, al, bh"
 
 ;Set cursor position to row 15 and column 0 and print a dashed line
