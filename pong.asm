@@ -236,36 +236,36 @@ USER_NAME_PLAYER1 PROC NEAR
 	CONTINUE:              
 	;Set cursor position to row 9 and column 25 and print this message 'Press any key to continue'
 
-	                       mov ah,03h                       ; get cursor current position
-	                       int 10h
+                            mov ah,03h                       ; get cursor current position
+                            int 10h
 
-	                       mov ah, 02h                  	; int 10h on ah = 02h => Set cursor position
-	                       add dh, 1                    	; row 13
-	                       mov dl, start_column         	; column 25
-	                       int 10h
-	                       mov ah , 09h
-	                       mov dx, offset LAST_MSG
-	                       int 21h
+                            mov ah, 02h                  	; int 10h on ah = 02h => Set cursor position
+                            add dh, 1                    	; row 13
+                            mov dl, start_column         	; column 25
+                            int 10h
+                            mov ah , 09h
+                            mov dx, offset LAST_MSG
+                            int 21h
 
-	;Read any key to continue
-	                       mov ah, 00H
-	                       int 16h
-	                       ret
+        ;Read any key to continue
+                            mov ah, 00H
+                            int 16h
+                            ret
 USER_NAME_PLAYER1 ENDP
 
 ;=============== Player 2 ===============
 USER_NAME_PLAYER2 PROC NEAR
-	                       mov ah, 0h                   	; set video mode
-	                       mov al, 03h                  	; configure video mode settings
-	                       int 10h
-	;Set cursor position to row 9 and column 25 and print welcome message
-	                       mov ah, 02h                  	; int 10h on ah = 02h => Set cursor position
-	                       mov dh, start_row            	; row 9
-	                       mov dl, start_column         	; column 25
-	                       int 10h
-	                       mov ah , 09h
-	                       mov dx, offset WLCOME_MSG_PLAYER2
-	                       int 21h
+                            mov ah, 0h                   	; set video mode
+                            mov al, 03h                  	; configure video mode settings
+                            int 10h
+        ;Set cursor position to row 9 and column 25 and print welcome message
+                            mov ah, 02h                  	; int 10h on ah = 02h => Set cursor position
+                            mov dh, start_row            	; row 9
+                            mov dl, start_column         	; column 25
+                            int 10h
+                            mov ah , 09h
+                            mov dx, offset WLCOME_MSG_PLAYER2
+                            int 21h
 
 	;   Wait user input and validate it => should start with a letter
     ;   should exist between 41h 'A' - 5Ah 'Z' or between 61h 'a' - 7Ah 'z'
@@ -456,7 +456,7 @@ USER_NAME_PLAYER2 ENDP
 ;========================================================================== DRAW SCORE PROCEDURE ==========================================================================
 DRAW_SCORE PROC NEAR
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Draw Left Player Score ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     mov si, @data                    ;moves to si the location in memory of the data segment
     mov es, si                       ;moves to es the location in memory of the data segment
     mov ah, 13h                      ;service to print string in graphic mode
