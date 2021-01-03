@@ -140,6 +140,7 @@ CHECK_AGAIN_ON_KEYPRESSED:
 
 GAME_MODE:
         call CLEAR_SCREEN
+	call STATUS_BAR
 
         CHECK_TIME:
 ;           get system time, more information @"http://spike.scu.edu.au/~barry/interrupts.html#ah2c"
@@ -151,6 +152,7 @@ GAME_MODE:
 
 ;           clear screen to draw next frame
             call CLEAR_SCREEN                      ; we create the Illosion of movement by "Clear - move - draw - clear ...." 
+	    call STATUS_BAR
 
             call MOV_BALL                          ; move the ball
             call DRAW_BALL                         ; draw the ball
@@ -765,7 +767,13 @@ DRAW_SCORE ENDP
         mov bh, 00h                                 ; palette color ID - to set background and border color
         mov bl, 00h                                 ; black color 
         int 10h                                     ; Excute according to the above configurations "ah, al, bh"
+	
+        ret
 
+    CLEAR_SCREEN ENDP
+
+;========================================================================= STATUS BAR PROCEDURE =========================================================================
+STATUS_BAR PROC NEAR 
 ;Set cursor position to row 15 and column 0 and print a dashed line
 	     mov ah, 02h
 	     mov dh, STATUS_BAR_START_ROW     	; row 15
@@ -775,6 +783,7 @@ DRAW_SCORE ENDP
 	     mov cx, 40                         ; number of repetitions of the character '-'
 	     mov al, '-'                        ; character to be printed stored in al
 	     int 10h
+; ========== Player 1 ==========
 ;Set cursor position to row 11 and column 0 and print the score of the players
          mov ah, 02h
          mov al, STATUS_BAR_START_ROW
@@ -807,7 +816,61 @@ DRAW_SCORE ENDP
 	     int 21h 
 ; display score of left player 
          mov ah, 0Ah                        ; print player's score
-	     mov al, LEFT_PLAYER_SCORE_FD          ; character t be printed
+	     mov al, LEFT_PLAYER_SCORE          ; character t be printed
+         mov cx, 1                          ; number of repetitions of the printed character
+	     int 10h
+
+; ========== player 2 ==========
+;Count the length of the left player username  to set the cursor position after it
+                     mov SI, offset MY_USER_NAME_PLAYER2[2]
+                     mov ch, 0h
+    STRING4_NOT_ENDED:
+                     cmp byte PTR [SI], 24h
+					 JE DONE_COUNTING4 
+					 INC ch
+					 INC SI 
+					 jmp STRING4_NOT_ENDED
+    DONE_COUNTING4:
+                     ;add ch, 30h 
+					 sub ch, 1h
+                     mov dummy_variable_to_count_strings_length, ch 
+;Count the length of "'s score: " message to set the cursor position after it
+                     mov SI, offset MSG_TO_DISPLAY_SCORE__IN_GAME_MODE
+                     mov ch, 0h
+    STRING5_NOT_ENDED:
+                     cmp byte PTR [SI], 24h
+					 JE DONE_COUNTING5 
+					 INC ch
+					 INC SI 
+					 jmp STRING5_NOT_ENDED
+    DONE_COUNTING5:
+                     add ch, dummy_variable_to_count_strings_length
+                     add ch, 2                ; to leave space for the score
+                     ;mov dummy_variable_to_count_strings_length, ch                     
+;Set cursor position to row 11 and column 0 and print the score of the players
+         mov ah, 02h
+         mov al, STATUS_BAR_START_ROW
+         add al, 1
+         mov cl, 40
+         sub cl, ch
+	     mov dh, al                       	; row 16
+	     mov dl, cl                        	; column 0
+	     int 10h
+         mov ah, 09h                        ; print player's user name
+	     mov dx, offset MY_USER_NAME_PLAYER2[2] 
+	     int 21h 
+
+         mov ah, 02h                         ; Set cursor position
+	     mov dh, al                          ; row 16
+         add cl, dummy_variable_to_count_strings_length
+	     mov dl, cl                          ; column after the name's length
+	     int 10h
+         mov ah, 09h                         ; print this message => 's score: 
+	     mov dx, offset MSG_TO_DISPLAY_SCORE__IN_GAME_MODE 
+	     int 21h 
+; display score of right player 
+         mov ah, 0Ah                        ; print player's score
+	     mov al, RIGHT_PLAYER_SCORE         ; character t be printed
          mov cx, 1                          ; number of repetitions of the printed character
 	     int 10h
 ;Set cursor position to row 17 and column 0 and print a dashed line
@@ -875,9 +938,9 @@ DRAW_SCORE ENDP
 	     mov dx, offset end_game_msg_part2 
 	     int 21h 
 
-        ret
+         ret 
 
-    CLEAR_SCREEN ENDP
+STATUS_BAR ENDP 
     
 ;========================================================================== GAME OVER PROCEDURE ==========================================================================
 GAME_OVER PROC NEAR
