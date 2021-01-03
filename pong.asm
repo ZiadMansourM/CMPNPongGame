@@ -35,15 +35,13 @@
     PADDLE_VELOCITY dw 07h                      ; Paddel Vertical Velocity
 ;   ========== VARS USED in GAVE_OVER Page ==========
     msg db 'GAME OVER'
-    STR_LENGTH EQU 17
+    STR_LENGTH EQU 15
 ;   ========== SCORE VARS ==========
     OPEN_PRACIKT db ' ('
-    LEFT_PLAYER_SCORE_SD db 30h                 ; Second digit of the score of the player at the left
-    LEFT_PLAYER_SCORE_FD db 30h                 ; First digit of the score of the player at the left
+    LEFT_PLAYER_SCORE db 30h                 ; First digit of the score of the player at the left
     CONCATINATE db ':'                          ; used to display the score    
-    RIGHT_PLAYER_SCORE_SD db 30h                ; Second digit of the score of the player at the right
-    RIGHT_PLAYER_SCORE_FD db 30h                ; First digit of the score of the player at the right
-    SCORE_LENGTH EQU 5                          ; used to display the score
+    RIGHT_PLAYER_SCORE db 30h                ; First digit of the score of the player at the right
+    SCORE_LENGTH EQU 3                          ; used to display the score
     CLOSE_PRACIKT db ')'
     MSG_TO_DISPLAY_SCORE__IN_GAME_MODE db "'s Score: ", '$'
 ;   ========== LEVEL number ==========
@@ -126,10 +124,10 @@ GAME_MODE:
 
 ;           if reached the limit score of level one
             mov al, SCORE_LIMIT
-            cmp LEFT_PLAYER_SCORE_FD, al
+            cmp LEFT_PLAYER_SCORE, al
             JE NEXT_LEVEL
             mov al, SCORE_LIMIT
-            cmp RIGHT_PLAYER_SCORE_FD, al
+            cmp RIGHT_PLAYER_SCORE, al
             JE NEXT_LEVEL
 
             jmp CHECK_TIME                         ; loop again
@@ -340,7 +338,7 @@ USER_NAME_PLAYER2 ENDP
         jmp NEXT
 ;       return if After setting the ball to center point as a result for hetting any of the left of right boundry 
         RESET_POSITION_LEFT:
-            add RIGHT_PLAYER_SCORE_FD, 1
+            add RIGHT_PLAYER_SCORE, 1
             ADD BALL_VELOCITY_CURRENT,2
             cmp BALL_VELOCITY_CURRENT,12h;
             JLE CHANGING_VELOCITY
@@ -348,7 +346,7 @@ USER_NAME_PLAYER2 ENDP
             call RESET_BALL_POSITION
             ret
         RESET_POSITION_RIGHT:
-            add LEFT_PLAYER_SCORE_FD, 1
+            add LEFT_PLAYER_SCORE, 1
             ADD BALL_VELOCITY_CURRENT,2
             cmp BALL_VELOCITY_CURRENT,12h;
             JLE CHANGING_VELOCITY
@@ -463,7 +461,7 @@ DRAW_SCORE PROC NEAR
     mov cx, SCORE_LENGTH             ;length of string
     mov dl, 38                       ;Column 0 > 40
     mov dh, 2                        ;Row    0 > 25
-    mov bp, offset LEFT_PLAYER_SCORE_SD ;mov bp the offset of the string
+    mov bp, offset LEFT_PLAYER_SCORE ;mov bp the offset of the string
     int 10h
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ret
@@ -636,8 +634,8 @@ DRAW_SCORE ENDP
         DRAW_PADDLE_LEFT_HORIZANTAL:
 ;           Configure the screen to the draw pexil mode
             mov ah, 0Ch                             ; draw pixil mode
-            mov al, RIGHT_PLAYER_SCORE_FD
-            cmp LEFT_PLAYER_SCORE_FD, al
+            mov al, RIGHT_PLAYER_SCORE
+            cmp LEFT_PLAYER_SCORE, al
             JG GREEN_LEFT
             JL RED_LEFT
             mov al, 0Fh                             ; white color (paddle)
@@ -678,8 +676,8 @@ DRAW_SCORE ENDP
         DRAW_PADDLE_RIGHT_HORIZANTAL:
 ;           Configure the screen to the draw pexil mode
             mov ah, 0Ch                             ; draw pixil mode
-            mov al, LEFT_PLAYER_SCORE_FD
-            cmp RIGHT_PLAYER_SCORE_FD, al
+            mov al, LEFT_PLAYER_SCORE
+            cmp RIGHT_PLAYER_SCORE, al
             JG GREEN_RIGHT
             JL RED_RIGHT
             mov al, 0Fh                             ; white color (paddle)
@@ -778,7 +776,7 @@ STATUS_BAR PROC NEAR
 	     int 21h 
 ; display score of left player 
          mov ah, 0Ah                        ; print player's score
-	     mov al, LEFT_PLAYER_SCORE_FD          ; character t be printed
+	     mov al, LEFT_PLAYER_SCORE          ; character t be printed
          mov cx, 1                          ; number of repetitions of the printed character
 	     int 10h
 
@@ -832,7 +830,7 @@ STATUS_BAR PROC NEAR
 	     int 21h 
 ; display score of right player 
          mov ah, 0Ah                        ; print player's score
-	     mov al, RIGHT_PLAYER_SCORE_FD      ; character t be printed
+	     mov al, RIGHT_PLAYER_SCORE      ; character t be printed
          mov cx, 1                          ; number of repetitions of the printed character
 	     int 10h
 ;Set cursor position to row 17 and column 0 and print a dashed line
