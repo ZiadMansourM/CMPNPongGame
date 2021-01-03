@@ -1,4 +1,4 @@
-[1]: Main Menu  ++++
+7[1]: Main Menu  ++++
 [2]: Status Bar "Is Names a must"  +++
 [3]: intial position of ball & "pause game" feature  ***
 [4]: modifiy USER_NAME window  +++

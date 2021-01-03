@@ -29,13 +29,15 @@
     PADDLE_VELOCITY dw 05h                      ; Paddel Vertical Velocity
 ;   ========== VARS USED in GAVE_OVER Page ==========
     msg db 'GAME OVER'
-    STR_LENGTH EQU 15
+    STR_LENGTH EQU 17
 ;   ========== SCORE VARS ==========
     OPEN_PRACIKT db ' ('
-    LEFT_PLAYER_SCORE db 30h                    ; score of the player at the left
+    LEFT_PLAYER_SCORE_SD db 30h                 ; Second digit of the score of the player at the left
+    LEFT_PLAYER_SCORE_FD db 30h                 ; First digit of the score of the player at the left
     CONCATINATE db ':'                          ; used to display the score    
-    RIGHT_PLAYER_SCORE db 30h                   ; score of the player at the right
-    SCORE_LENGTH EQU 3                          ; used to display the score
+    RIGHT_PLAYER_SCORE_SD db 30h                ; Second digit of the score of the player at the right
+    RIGHT_PLAYER_SCORE_FD db 30h                ; First digit of the score of the player at the right
+    SCORE_LENGTH EQU 5                          ; used to display the score
     CLOSE_PRACIKT db ')'
 ;   ========== LEVEL number ==========
     SCORE_LIMIT db 35h
@@ -150,10 +152,10 @@ GAME_MODE:
 
 ;           if reached the limit score of level one
             mov al, SCORE_LIMIT
-            cmp LEFT_PLAYER_SCORE, al
+            cmp LEFT_PLAYER_SCORE_FD, al
             JE NEXT_LEVEL
             mov al, SCORE_LIMIT
-            cmp RIGHT_PLAYER_SCORE, al
+            cmp RIGHT_PLAYER_SCORE_FD, al
             JE NEXT_LEVEL
 
             jmp CHECK_TIME                         ; loop again
@@ -268,58 +270,58 @@ USER_NAME_PLAYER2 PROC NEAR
 	;   Wait user input and validate it => should start with a letter
     ;   should exist between 41h 'A' - 5Ah 'Z' or between 61h 'a' - 7Ah 'z'
 	TAKE_INPUT_AGAIN_P2:      
-	                       mov ah, 0Ah                      ; get input from user
-	                       mov dx, offset MY_USER_NAME_PLAYER2
-	                       int 21h
+                        mov ah, 0Ah                      ; get input from user
+                        mov dx, offset MY_USER_NAME_PLAYER2
+                        int 21h
 
-	                       mov ah, MY_USER_NAME_PLAYER2[2]          ; move first character to ah to check on it
+                        mov ah, MY_USER_NAME_PLAYER2[2]          ; move first character to ah to check on it
 
-	                       cmp ah, 'A'                      ; if character greater than 'A' => check if it is less than 'Z' 
-	                       JG  CHECK_LESS_CAPITAL_Z_P2         ; else => check if it is between 'a' and 'z'
+                        cmp ah, 'A'                      ; if character greater than 'A' => check if it is less than 'Z' 
+                        JG  CHECK_LESS_CAPITAL_Z_P2         ; else => check if it is between 'a' and 'z'
 
-	CHECK_SMALL_CHARACTERS_P2:
-	                       cmp ah, 'a'                      ; if character greater than 'a' => check if it is less than 'z' 
-	                       JG  CHECK_LESS_SMALL_Z_P2           ; else => invalid character, take input again
+CHECK_SMALL_CHARACTERS_P2:
+                        cmp ah, 'a'                      ; if character greater than 'a' => check if it is less than 'z' 
+                        JG  CHECK_LESS_SMALL_Z_P2           ; else => invalid character, take input again
 
-	                       mov ah , 09h
-	                       mov dx, offset ERROR_NAME_MSG    ; print error message and loop again
-	                       int 21h
-	                       jmp TAKE_INPUT_AGAIN_P2
+                        mov ah , 09h
+                        mov dx, offset ERROR_NAME_MSG    ; print error message and loop again
+                        int 21h
+                        jmp TAKE_INPUT_AGAIN_P2
 
-	CHECK_LESS_CAPITAL_Z_P2:  
-	                       mov ah, MY_USER_NAME_PLAYER2[2]
-	                       cmp ah,'Z' 
-	                       JL  CONTINUE_P2                    ; if character less than 'Z' => valid character and continue the program
-	                       jmp CHECK_SMALL_CHARACTERS_P2      ; else => it could be lower case character => check them
+CHECK_LESS_CAPITAL_Z_P2:  
+                        mov ah, MY_USER_NAME_PLAYER2[2]
+                        cmp ah,'Z' 
+                        JL  CONTINUE_P2                    ; if character less than 'Z' => valid character and continue the program
+                        jmp CHECK_SMALL_CHARACTERS_P2      ; else => it could be lower case character => check them
 
-	CHECK_LESS_SMALL_Z_P2:    
-	                       mov ah, MY_USER_NAME_PLAYER2[2]
-	                       cmp ah, 'z'
-	                       JL  CONTINUE_P2                    ; if character less than 'Z' => valid character and continue the program
-	                       mov ah , 09h                    ; else => print error message and loop again
-	                       mov dx, offset ERROR_NAME_MSG
-	                       int 21h
-	                       jmp TAKE_INPUT_AGAIN_P2
+CHECK_LESS_SMALL_Z_P2:    
+                        mov ah, MY_USER_NAME_PLAYER2[2]
+                        cmp ah, 'z'
+                        JL  CONTINUE_P2                    ; if character less than 'Z' => valid character and continue the program
+                        mov ah , 09h                    ; else => print error message and loop again
+                        mov dx, offset ERROR_NAME_MSG
+                        int 21h
+                        jmp TAKE_INPUT_AGAIN_P2
         
 
 	CONTINUE_P2:              
 	;Set cursor position to row 9 and column 25 and print this message 'Press any key to continue'
 
-	                       mov ah,03h                       ; get cursor current position
-	                       int 10h
+                        mov ah,03h                       ; get cursor current position
+                        int 10h
 
-	                       mov ah, 02h                  	; int 10h on ah = 02h => Set cursor position
-	                       add dh, 1                    	; row 13
-	                       mov dl, start_column         	; column 25
-	                       int 10h
-	                       mov ah , 09h
-	                       mov dx, offset LAST_MSG
-	                       int 21h
+                        mov ah, 02h                  	; int 10h on ah = 02h => Set cursor position
+                        add dh, 1                    	; row 13
+                        mov dl, start_column         	; column 25
+                        int 10h
+                        mov ah , 09h
+                        mov dx, offset LAST_MSG
+                        int 21h
 
 	;Read any key to continue
-	                       mov ah, 00H
-	                       int 16h
-	                       ret
+                        mov ah, 00H
+                        int 16h
+                        ret
 USER_NAME_PLAYER2 ENDP
 ;========================================================================== MOVE BALL PROCEDURE ==========================================================================
 ;   this procedure handels all the logic behind setting the ball's position
@@ -357,11 +359,11 @@ USER_NAME_PLAYER2 ENDP
         jmp NEXT
 ;       return if After setting the ball to center point as a result for hetting any of the left of right boundry 
         RESET_POSITION_LEFT:
-            add RIGHT_PLAYER_SCORE, 1
+            add RIGHT_PLAYER_SCORE_FD, 1
             call RESET_BALL_POSITION
             ret
         RESET_POSITION_RIGHT:
-            add LEFT_PLAYER_SCORE, 1
+            add LEFT_PLAYER_SCORE_FD, 1
             call RESET_BALL_POSITION
             ret
         ;RESET_POSITION:
@@ -464,7 +466,7 @@ DRAW_SCORE PROC NEAR
     mov cx, SCORE_LENGTH             ;length of string
     mov dl, 18                       ;Column 0 > 39
     mov dh, 2                        ;Row    0 > 24
-    mov bp, offset LEFT_PLAYER_SCORE ;mov bp the offset of the string
+    mov bp, offset LEFT_PLAYER_SCORE_SD ;mov bp the offset of the string
     int 10h
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ret
@@ -637,8 +639,8 @@ DRAW_SCORE ENDP
         DRAW_PADDLE_LEFT_HORIZANTAL:
 ;           Configure the screen to the draw pexil mode
             mov ah, 0Ch                             ; draw pixil mode
-            mov al, RIGHT_PLAYER_SCORE
-            cmp LEFT_PLAYER_SCORE, al
+            mov al, RIGHT_PLAYER_SCORE_FD
+            cmp LEFT_PLAYER_SCORE_FD, al
             JG GREEN_LEFT
             JL RED_LEFT
             mov al, 0Fh                             ; white color (paddle)
@@ -679,8 +681,8 @@ DRAW_SCORE ENDP
         DRAW_PADDLE_RIGHT_HORIZANTAL:
 ;           Configure the screen to the draw pexil mode
             mov ah, 0Ch                             ; draw pixil mode
-            mov al, LEFT_PLAYER_SCORE
-            cmp RIGHT_PLAYER_SCORE, al
+            mov al, LEFT_PLAYER_SCORE_FD
+            cmp RIGHT_PLAYER_SCORE_FD, al
             JG GREEN_RIGHT
             JL RED_RIGHT
             mov al, 0Fh                             ; white color (paddle)
