@@ -77,50 +77,10 @@
 	
 	call USER_NAME_PLAYER1
         call USER_NAME_PLAYER2
-	
-;======================================================= MAIN MENU =======================================================
-        mov ah, 00h                      	; set video mode
-	mov al, 03h                      	; configure video mode settings (text mode 25 rows and 80 column)
-	int 10h
-
-;Set cursor position to row 9 and column 25 and print offset message (start chatting)
-	mov ah, 02h                      	; int 10h on ah = 02h => Set cursor position
-	mov dh, start_row                	; row 9
-	mov dl, start_column             	; column 25
-	int 10h
-	mov ah, 09h
-	mov dx, offset start_chatting_msg
-	int 21h
-;Set cursor position to row 13 and column 25 and print offset message (start game)
-        mov ah, 02h
-	mov cl,start_row
-	add cl,2
-	mov dh, cl                       	; row 11
-	mov dl, start_column             	; column 25
-	int 10h
-	mov ah, 09h
-	mov dx, offset start_PongGame_msg
-	int 21h
-;Set cursor position to row 11 and column 25 and print offset message (end program)
-        mov ah, 02h
-	mov cl,start_row
-	add cl,4
-	mov dh, cl                       	; row 13
-	mov dl, start_column             	; column 25
-	int 10h
-	mov ah, 09h
-	mov dx, offset end_game_msg
-	int 21h
-;Set cursor position to row 22 and column 0 and print a dashed line
-	mov ah, 02h
-	mov dh, 22                       	; row 22
-	mov dl, 0                        	; column 0
-	int 10h
-	mov ah, 0Ah                             ; int 10h on ah = 0Ah => write character at cursor position
-	mov cx, 80                              ; number of repetitions of the character '-'
-	mov al, '-'                             ; character to be printed stored in al
-	int 10h
-
+START_GAME: 
+         mov LEFT_PLAYER_SCORE, 30h
+         mov RIGHT_PLAYER_SCORE, 30h 
+         call MAIN_MENU	
 CHECK_AGAIN_ON_KEYPRESSED:
         mov ah,00h                             ; get keypress from user
         int 16h
@@ -131,16 +91,14 @@ CHECK_AGAIN_ON_KEYPRESSED:
         cmp ah, 01h                            ; Check if ESC was pressed (Scan code of ESC = 01 )
         JZ EXIT2 
 ; else none of the keys corresponds to a valid command (take a keypress again)
-		jmp CHECK_AGAIN_ON_KEYPRESSED
+	 jmp CHECK_AGAIN_ON_KEYPRESSED
 
     EXIT2:
-        mov ah, 04ch
-        int 21h
-;======================================================= MAIN MENU END =======================================================
+	     mov ah, 04ch
+		 int 21h
 
 GAME_MODE:
         call CLEAR_SCREEN
-	call STATUS_BAR
 
         CHECK_TIME:
 ;           get system time, more information @"http://spike.scu.edu.au/~barry/interrupts.html#ah2c"
@@ -153,6 +111,10 @@ GAME_MODE:
 ;           clear screen to draw next frame
             call CLEAR_SCREEN                      ; we create the Illosion of movement by "Clear - move - draw - clear ...." 
 	    call STATUS_BAR
+	    mov ah,01h                          ; get keypress from user to check if user pressed F4
+            int 16h
+            cmp ah, 03Eh                        ; Check if F4 was pressed (Scan code of F4 = 01 )
+            JE START_GAME 
 
             call MOV_BALL                          ; move the ball
             call DRAW_BALL                         ; draw the ball
@@ -941,7 +903,53 @@ STATUS_BAR PROC NEAR
          ret 
 
 STATUS_BAR ENDP 
-    
+;======================================================= MAIN MENU =======================================================
+MAIN_MENU PROC NEAR
+        mov ah, 00h                      	; set video mode
+	mov al, 03h                      	; configure video mode settings (text mode 25 rows and 80 column)
+	int 10h
+
+;Set cursor position to row 9 and column 25 and print offset message (start chatting)
+	mov ah, 02h                      	; int 10h on ah = 02h => Set cursor position
+	mov dh, start_row                	; row 9
+	mov dl, start_column             	; column 25
+	int 10h
+	mov ah, 09h
+	mov dx, offset start_chatting_msg
+	int 21h
+;Set cursor position to row 13 and column 25 and print offset message (start game)
+        mov ah, 02h
+	mov cl,start_row
+	add cl,2
+	mov dh, cl                       	; row 11
+	mov dl, start_column             	; column 25
+	int 10h
+	mov ah, 09h
+	mov dx, offset start_PongGame_msg
+	int 21h
+;Set cursor position to row 11 and column 25 and print offset message (end program)
+        mov ah, 02h
+	mov cl,start_row
+	add cl,4
+	mov dh, cl                       	; row 13
+	mov dl, start_column             	; column 25
+	int 10h
+	mov ah, 09h
+	mov dx, offset end_game_msg
+	int 21h
+;Set cursor position to row 22 and column 0 and print a dashed line
+	mov ah, 02h
+	mov dh, 22                       	; row 22
+	mov dl, 0                        	; column 0
+	int 10h
+	mov ah, 0Ah                             ; int 10h on ah = 0Ah => write character at cursor position
+	mov cx, 80                              ; number of repetitions of the character '-'
+	mov al, '-'                             ; character to be printed stored in al
+	int 10h    
+	
+	ret
+	
+MAIN_MENU ENDP
 ;========================================================================== GAME OVER PROCEDURE ==========================================================================
 GAME_OVER PROC NEAR
 
