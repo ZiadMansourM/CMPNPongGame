@@ -203,11 +203,11 @@ USER_NAME_PLAYER1 PROC NEAR
 
 	                       mov ah, MY_USER_NAME_PLAYER1[2]          ; move first character to ah to check on it
 
-	                       cmp ah, 'A'                      ; if character greater than 'A' => check if it is less than 'Z' 
+	                       cmp ah, 40h                      ; if character greater than 'A' => check if it is less than 'Z' 
 	                       JG  CHECK_LESS_CAPITAL_Z         ; else => check if it is between 'a' and 'z'
 
 	CHECK_SMALL_CHARACTERS:
-	                       cmp ah, 'a'                      ; if character greater than 'a' => check if it is less than 'z' 
+	                       cmp ah, 60h                      ; if character greater than 'a' => check if it is less than 'z' 
 	                       JG  CHECK_LESS_SMALL_Z           ; else => invalid character, take input again
 
 	                       mov ah , 09h
@@ -217,13 +217,13 @@ USER_NAME_PLAYER1 PROC NEAR
 
 	CHECK_LESS_CAPITAL_Z:  
 	                       mov ah, MY_USER_NAME_PLAYER1[2]
-	                       cmp ah,'Z' 
+	                       cmp ah, 5Ah 
 	                       JL  CONTINUE                    ; if character less than 'Z' => valid character and continue the program
 	                       jmp CHECK_SMALL_CHARACTERS      ; else => it could be lower case character => check them
 
 	CHECK_LESS_SMALL_Z:    
 	                       mov ah, MY_USER_NAME_PLAYER1[2]
-	                       cmp ah, 'z'
+	                       cmp ah, 7Bh
 	                       JL  CONTINUE                    ; if character less than 'Z' => valid character and continue the program
 	                       mov ah , 09h                    ; else => print error message and loop again
 	                       mov dx, offset ERROR_NAME_MSG
@@ -274,11 +274,11 @@ USER_NAME_PLAYER2 PROC NEAR
 
 	                       mov ah, MY_USER_NAME_PLAYER2[2]          ; move first character to ah to check on it
 
-	                       cmp ah, 'A'                      ; if character greater than 'A' => check if it is less than 'Z' 
+	                       cmp ah, 40h                      ; if character greater than 'A' => check if it is less than 'Z' 
 	                       JG  CHECK_LESS_CAPITAL_Z_P2         ; else => check if it is between 'a' and 'z'
 
 	CHECK_SMALL_CHARACTERS_P2:
-	                       cmp ah, 'a'                      ; if character greater than 'a' => check if it is less than 'z' 
+	                       cmp ah, 60h                      ; if character greater than 'a' => check if it is less than 'z' 
 	                       JG  CHECK_LESS_SMALL_Z_P2           ; else => invalid character, take input again
 
 	                       mov ah , 09h
@@ -288,13 +288,13 @@ USER_NAME_PLAYER2 PROC NEAR
 
 	CHECK_LESS_CAPITAL_Z_P2:  
 	                       mov ah, MY_USER_NAME_PLAYER2[2]
-	                       cmp ah,'Z' 
+	                       cmp ah, 5Bh 
 	                       JL  CONTINUE_P2                    ; if character less than 'Z' => valid character and continue the program
 	                       jmp CHECK_SMALL_CHARACTERS_P2      ; else => it could be lower case character => check them
 
 	CHECK_LESS_SMALL_Z_P2:    
 	                       mov ah, MY_USER_NAME_PLAYER2[2]
-	                       cmp ah, 'z'
+	                       cmp ah, 7Bh
 	                       JL  CONTINUE_P2                    ; if character less than 'Z' => valid character and continue the program
 	                       mov ah , 09h                    ; else => print error message and loop again
 	                       mov dx, offset ERROR_NAME_MSG
