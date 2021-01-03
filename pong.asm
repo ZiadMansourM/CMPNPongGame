@@ -816,7 +816,7 @@ STATUS_BAR PROC NEAR
 	     int 21h 
 ; display score of left player 
          mov ah, 0Ah                        ; print player's score
-	     mov al, LEFT_PLAYER_SCORE          ; character t be printed
+	     mov al, LEFT_PLAYER_SCORE_FD          ; character t be printed
          mov cx, 1                          ; number of repetitions of the printed character
 	     int 10h
 
@@ -870,7 +870,7 @@ STATUS_BAR PROC NEAR
 	     int 21h 
 ; display score of right player 
          mov ah, 0Ah                        ; print player's score
-	     mov al, RIGHT_PLAYER_SCORE         ; character t be printed
+	     mov al, RIGHT_PLAYER_SCORE_FD      ; character t be printed
          mov cx, 1                          ; number of repetitions of the printed character
 	     int 10h
 ;Set cursor position to row 17 and column 0 and print a dashed line
@@ -973,8 +973,8 @@ TRANSITION PROC NEAR
     mov bh, 0                        ;page number=always zero
     mov bl, 0Fh                      ;color of the text (white foreground 1111 and black background 0000 )
     mov cx, trans_msg_LENGTH         ;length of string
-    mov dl, 16                       ;Column 0 > 39
-    mov dh, 12                       ;Row    0 > 24
+    mov dl, 38                       ;Column 0 > 39
+    mov dh, 15                       ;Row    0 > 24
     mov bp, offset trans_msg         ;mov bp the offset of the string
     int 10h
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -985,7 +985,6 @@ TRANSITION PROC NEAR
         cmp ah, 28
         JNZ USER_INPUT
     ret
-
 TRANSITION ENDP
 
 end main
