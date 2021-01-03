@@ -6,6 +6,7 @@
     WINDOW_WIDTH dw 140h                        ; 320 Pixels
     WINDOW_HEIGHT dw 78h                        ; 120 Pixels
     WINDOW_BOUNDS DW 6h                         ; to check collesion early
+    STATUS_BAR_START_ROW db 16                  ; the start of the status bar
 ;   ========== VARS TO CONTROL MOVEMENT ==========
     OLD_TIME DB 0                               ; old time
     BALL_ORIGINAL_X DW 0A0H                     ; X-position of the point of the center 
@@ -39,6 +40,7 @@
     RIGHT_PLAYER_SCORE_FD db 30h                ; First digit of the score of the player at the right
     SCORE_LENGTH EQU 5                          ; used to display the score
     CLOSE_PRACIKT db ')'
+    MSG_TO_DISPLAY_SCORE__IN_GAME_MODE db "'s Score: ", '$'
 ;   ========== LEVEL number ==========
     SCORE_LIMIT db 35h
     LEVEL db 00h 
@@ -59,6 +61,9 @@
     end_game_msg       db  '*To end the program press ESC','$'
     start_row          db  9                  ; row position of main menu message 
     start_column       db 25                  ; row position of main menu message
+    end_game_msg_part1 db 10, 13, '-To end the game with ', '$'
+    end_game_msg_part2 db 'Press F4', '$'
+    dummy_variable_to_count_strings_length db 0h 
 
 .code 
     main proc
@@ -723,7 +728,6 @@ DRAW_SCORE ENDP
 ;========================================================================== CLEAR SCREEN PROCEDURE ==========================================================================
 ;   This procedure helps in creating the Illosion of movement by clearing the screen 
     CLEAR_SCREEN PROC NEAR
-
 ;       set video mode, more information @"https://stanislavs.org/helppc/int_10-0.html"
         mov ah, 0h                                  ; set video mode
         mov al, 13h                                 ; configure video mode settings
@@ -733,6 +737,115 @@ DRAW_SCORE ENDP
         mov bh, 00h                                 ; palette color ID - to set background and border color
         mov al, 00h                                 ; black color 
         int 10h                                     ; Excute according to the above configurations "ah, al, bh"
+
+;Set cursor position to row 15 and column 0 and print a dashed line
+	     mov ah, 02h
+	     mov dh, STATUS_BAR_START_ROW     	; row 15
+	     mov dl, 0                        	; column 0
+	     int 10h
+	     mov ah, 0Ah                        ; int 10h on ah = 0Ah => write character at cursor position
+	     mov cx, 40                         ; number of repetitions of the character '-'
+	     mov al, '-'                        ; character to be printed stored in al
+	     int 10h
+;Set cursor position to row 11 and column 0 and print the score of the players
+         mov ah, 02h
+         mov al, STATUS_BAR_START_ROW
+         add al, 1
+	     mov dh, al                       	; row 16
+	     mov dl, 0                        	; column 0
+	     int 10h
+         mov ah, 09h                        ; print player's user name
+	     mov dx, offset MY_USER_NAME_PLAYER1[2] 
+	     int 21h 
+;Count the length of the left player username  to set the cursor position after it
+                     mov SI, offset MY_USER_NAME_PLAYER1[2]
+                     mov ch, 0h
+    STRING1_NOT_ENDED:
+                     cmp byte PTR [SI], 24h
+					 JE DONE_COUNTING1 
+					 INC ch
+					 INC SI 
+					 jmp STRING1_NOT_ENDED
+    DONE_COUNTING1:
+                     ;add ch, 30h 
+					 sub ch, 1h
+
+         mov ah, 02h                         ; Set cursor position
+	     mov dh, al                          ; row 16
+	     mov dl, ch                          ; column after the name's length
+	     int 10h
+         mov ah, 09h                        ; print this message => 's score: 
+	     mov dx, offset MSG_TO_DISPLAY_SCORE__IN_GAME_MODE 
+	     int 21h 
+; display score of left player 
+         mov ah, 0Ah                        ; print player's score
+	     mov al, LEFT_PLAYER_SCORE          ; character t be printed
+         mov cx, 1                          ; number of repetitions of the printed character
+	     int 10h
+;Set cursor position to row 17 and column 0 and print a dashed line
+	     mov ah, 02h
+         mov al, STATUS_BAR_START_ROW
+         add al, 2
+	     mov dh, al                       	; row 17
+	     mov dl, 0                        	; column 0
+	     int 10h
+	     mov ah, 0Ah                        ; int 10h on ah = 0Ah => write character at cursor position
+	     mov cx, 40                         ; number of repetitions of the character '-'
+	     mov al, '-'                        ; character to be printed stored in al
+	     int 10h
+
+;Set cursor position to row 24 and column 0 and print a dashed line
+	     mov ah, 02h
+	     mov dh, 24                       	; row 24
+	     mov dl, 0                        	; column 0
+	     int 10h
+	     mov ah, 0Ah                        ; int 10h on ah = 0Ah => write character at cursor position
+	     mov cx, 40                         ; number of repetitions of the character '-'
+	     mov al, '-'                        ; character to be printed stored in al
+	     int 10h
+;Print end game message 
+         mov ah, 09h                        ; print this message => To end the game with
+	     mov dx, offset end_game_msg_part1 
+	     int 21h 
+
+         mov ah, 09h                        ; print the player's name 
+	     mov dx, offset MY_USER_NAME_PLAYER1[2] 
+	     int 21h
+;Count the length of the first message to set the cursor position after it
+                     mov SI, offset end_game_msg_part1
+                     mov ch, 0h
+    STRING2_NOT_ENDED:
+                     cmp byte PTR [SI], 24h
+					 JE DONE_COUNTING2 
+					 INC ch
+					 INC SI 
+					 jmp STRING2_NOT_ENDED
+    DONE_COUNTING2:
+                     ;add ch, 30h 
+					 sub ch, 1h
+                     mov dummy_variable_to_count_strings_length, ch
+
+;Count the length of the left player username to set the cursor position after it
+                     mov SI, offset MY_USER_NAME_PLAYER1[2]
+                     mov ch, 0h
+    STRING3_NOT_ENDED:
+                     cmp byte PTR [SI], 24h
+					 JE DONE_COUNTING3 
+					 INC ch
+					 INC SI 
+					 jmp STRING3_NOT_ENDED
+    DONE_COUNTING3:
+                     ;add ch, 30h 
+					 sub ch, 1h
+                     add ch, dummy_variable_to_count_strings_length
+
+         mov ah, 02h                        ; Set cursor position
+	     mov dh, 24                       	; row 24
+	     mov dl, ch                        	; column after the name and first message length
+	     int 10h
+         mov ah, 09h                        ; print this message => Press F4
+	     mov dx, offset end_game_msg_part2 
+	     int 21h 
 
         ret
 
