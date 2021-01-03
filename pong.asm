@@ -779,7 +779,7 @@ DRAW_SCORE ENDP
 	     int 21h 
 ; display score of left player 
          mov ah, 0Ah                        ; print player's score
-	     mov al, LEFT_PLAYER_SCORE          ; character t be printed
+	     mov al, LEFT_PLAYER_SCORE_FD          ; character t be printed
          mov cx, 1                          ; number of repetitions of the printed character
 	     int 10h
 ;Set cursor position to row 17 and column 0 and print a dashed line
