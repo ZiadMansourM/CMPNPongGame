@@ -4,24 +4,25 @@
 .data
 ;   ========== VARS TO CONTROLL COLLESION ==========
     WINDOW_WIDTH dw 280h                        ; 320 Pixels 640
-    WINDOW_HEIGHT dw 384                        ; 120 Pixels 480
+    WINDOW_HEIGHT dw 180h                        ; 120 Pixels 480
     WINDOW_BOUNDS DW 6h                         ; to check collesion early
     STATUS_BAR_START_ROW db 16                  ; the start of the status bar
 ;   ========== VARS TO CONTROL MOVEMENT ==========
     OLD_TIME DB 0                               ; old time
-    BALL_ORIGINAL_X DW 320                     ; X-position of the point of the center 
-    BALL_ORIGINAL_Y DW 192                      ; Y-position of the point of the center 
+    BALL_ORIGINAL_X DW 140h                     ; X-position of the point of the center 
+    BALL_ORIGINAL_Y DW 0c0h                     ; Y-position of the point of the center 
 ;   ========== VARS TO DROW BALL ==========
-    BALL_X DW 320                               ; "BALL" X position (cloumn)
-    BALL_Y DW 192                               ; "BALL" y position (row - line)
-    BALL_SIZE DW 8h                            ; SIze of the ball 4-x 4-y
-    BALL_VELOCITY_X_ARR DW 05h,04h,03h,04h,02h,05h,03h
-    BALL_VELOCITY_X_ARR_2 DW 07h,03h,05h,04h,06h,02h,06h  
-    BALL_VELOCITY_X DW 05h                      
-    BALL_VELOCITY_Y_ARR DW 02h,04h,05h,03h,05h,03h,04h
-    BALL_VELOCITY_Y_ARR_2 DW 02h,06h,05h,06h,03h,07h,04h
-    BALL_VELOCITY_Y DW 02h                      
-    BALL_VELOCITY_CURRENT DW 0                  
+    BALL_X DW 140h                               ; "BALL" X position (cloumn)
+    BALL_Y DW 0c0h                               ; "BALL" y position (row - line)
+    BALL_SIZE DW 8h                              ; SIze of the ball 4-x 4-y
+    BALL_VELOCITY_X_ARR DW 05h,04h,03h,04h,02h,05h,03h      ; velocity values in x direction for level 1 
+    BALL_VELOCITY_X_ARR_2 DW 07h,03h,05h,04h,06h,02h,06h    ; velocity values in x direction for level 2
+    BALL_VELOCITY_X DW 05h                                  ; current ball velocity in x direction
+    BALL_VELOCITY_Y_ARR DW 02h,04h,05h,03h,05h,03h,04h      ; velocity values in y direction for level 1
+    BALL_VELOCITY_Y_ARR_2 DW 02h,06h,05h,06h,03h,07h,04h    ; velocity values in y direction for level 2
+    BALL_VELOCITY_Y DW 02h                                  ; current ball velocity in y direction
+    BALL_VELOCITY_CURRENT DW 0                                  ; index of the current velocity to loop the arrays
+    BALL_VELOCITY_TOT DB 0  
 ;   ========== VARS TO DROW LEFT_PADDELS ==========
     PADDLE_LEFT_X dw 0Ah                        ; "LEFT-PADDLE" X position (cloumn)
     PADDLE_LEFT_Y DW 0Ah                        ; "LEFT-PADDLE" y position (row - line)
@@ -135,16 +136,18 @@ GAME_MODE:
         NEXT_LEVEL:
             cmp LEVEL, 01h
             JE GAME_OVER_ALERT
-            mov cx,7                    
-            mov di,offset BALL_VELOCITY_X_ARR
-            mov si,offset BALL_VELOCITY_X_ARR_2
-            REP MOVSW
-            mov cx,7                    
-            mov di,offset BALL_VELOCITY_Y_ARR
-            mov si,offset BALL_VELOCITY_Y_ARR_2
-            REP MOVSW
-            mov LEVEL, 01h                         ; previous value was 0
-            mov SCORE_LIMIT, 39h                   ; 39 = '9', previous value was 35h = '5'
+            ;transferring x values for velocity from the array specified for level 2
+            mov cx,7                                ; the number of possible values for velocity
+            mov di,offset BALL_VELOCITY_X_ARR       ; the old array to change valuues
+            mov si,offset BALL_VELOCITY_X_ARR_2     ; the array to copy values from
+            REP MOVSW                               ; trasferring vlues
+            ;transferring y values for velocity from the array specified for level 2
+            mov cx,7                                ; the number of possible values for velocity
+            mov di,offset BALL_VELOCITY_Y_ARR       ; the old array to change valuues
+            mov si,offset BALL_VELOCITY_Y_ARR_2     ; the array to copy values from
+            REP MOVSW                               ; trasferring vlues
+            mov LEVEL, 01h                          ; previous value was 0
+            mov SCORE_LIMIT, 39h                    ; 39 = '9', previous value was 35h = '5'
             call CLEAR_SCREEN
             call TRANSITION
             jmp CHECK_TIME
@@ -327,40 +330,63 @@ USER_NAME_PLAYER2 ENDP
 ;       Check if their is collesions with the upper boundries
         mov ax, WINDOW_BOUNDS                   ; Upper boundry
         cmp BALL_Y, ax                          ; compares the y-position(ball) ~ Upper boundry
-        JL NEG_VELOCITY_Y                       ; IF (less) {THEN Collesion with Upper Boundry;} ELSE {continue;}
+        JL NEG_VELOCITY_Y_TEMP                  ; IF (less) {THEN Collesion with Upper Boundry;} ELSE {continue;}
 ;       Check if their is collesions with the lower boundries
         mov ax, WINDOW_HEIGHT                   ; Window height
         sub ax, BALL_SIZE                       ; size of the ball
         sub ax, WINDOW_BOUNDS                   ; lower boundry
         cmp BALL_Y, ax                          ; compare Y-position(ball) ~ [Window height - size of the ball - lower boundry]
-        JG NEG_VELOCITY_Y                       ; IF (Greater) {THEN Collesion with lower Boundry;} ELSE {continue;}
+        JG NEG_VELOCITY_Y_TEMP                  ; IF (Greater) {THEN Collesion with lower Boundry;} ELSE {continue;}
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
         jmp NEXT
 ;       return if After setting the ball to center point as a result for hetting any of the left of right boundry 
         RESET_POSITION_LEFT:
             add RIGHT_PLAYER_SCORE, 1
-            ADD BALL_VELOCITY_CURRENT,2
-            cmp BALL_VELOCITY_CURRENT,12h;
-            JLE CHANGING_VELOCITY
-            mov BALL_VELOCITY_CURRENT,0h
-            call RESET_BALL_POSITION
+            ADD BALL_VELOCITY_CURRENT,2     ; to get the index of the next velocity(2 as it is an array of words) 
+            INC BALL_VELOCITY_TOT
+            cmp BALL_VELOCITY_CURRENT,12h   ; the last index in our array
+            JLE CHANGING_VELOCITY           ;when we are in the appropriate range
+            mov BALL_VELOCITY_CURRENT,0h    ;if we got away of the array we start again from 0 index 
+            call RESET_BALL_POSITION        
             ret
         RESET_POSITION_RIGHT:
             add LEFT_PLAYER_SCORE, 1
-            ADD BALL_VELOCITY_CURRENT,2
-            cmp BALL_VELOCITY_CURRENT,12h;
-            JLE CHANGING_VELOCITY
-            mov BALL_VELOCITY_CURRENT,0h
-            CHANGING_VELOCITY:
-            lea bx,BALL_VELOCITY_X_ARR
-            add bx,BALL_VELOCITY_CURRENT
-            mov ax,[bx]                           
+            ADD BALL_VELOCITY_CURRENT,2     ; to get the index of the next velocity(2 as it is an array of words) 
+            INC BALL_VELOCITY_TOT
+            cmp BALL_VELOCITY_CURRENT,12h   ; the last index in our array
+            JLE CHANGING_VELOCITY           ;when we are in the appropriate range
+            mov BALL_VELOCITY_CURRENT,0h    ;if we got away of the array we start again from 0 index 
+            jmp CHANGING_VELOCITY
+            NEG_VELOCITY_Y_TEMP: jmp NEG_VELOCITY_Y
+        CHANGING_VELOCITY:
+            lea bx,BALL_VELOCITY_X_ARR      ; gettig the offset of the x array
+            add bx,BALL_VELOCITY_CURRENT    ; getting the value in the current index
+            mov ax,[bx]                     ; getting the value in ax in order to move it to another place in memory
+            mov BALL_VELOCITY_X,ax          ; refreshing the value of x velocity
+            lea bx,BALL_VELOCITY_Y_ARR      ; gettig the offset of the y array
+            add bx,BALL_VELOCITY_CURRENT    ; getting the value in the current index
+            mov ax,[bx]                     ; getting the value in ax in order to move it to another place in memory
             mov BALL_VELOCITY_X,ax
-            lea bx,BALL_VELOCITY_Y_ARR
-            add bx,BALL_VELOCITY_CURRENT
-            mov ax,[bx]                   
-            mov BALL_VELOCITY_Y,ax
-            call RESET_BALL_POSITION
+            mov al,BALL_VELOCITY_TOT
+            mov BALL_VELOCITY_Y,ax          ; refreshing the value of y velocity
+            mov al,BALL_VELOCITY_TOT
+            mov bl,04
+            div bl
+            cmp ah,0
+            JE AFTER_CHANGING_VELOCITY
+            cmp ah,1
+            JE NegateX
+            cmp ah,2
+            JE NegateXY
+            cmp ah,3
+            JE NegateY
+            NegateX:neg BALL_VELOCITY_X
+            JMP AFTER_CHANGING_VELOCITY
+            NegateY:neg BALL_VELOCITY_Y
+            JMP AFTER_CHANGING_VELOCITY
+            NegateXY:neg BALL_VELOCITY_X
+            neg BALL_VELOCITY_Y
+            AFTER_CHANGING_VELOCITY: call RESET_BALL_POSITION
             ret
         ;RESET_POSITION:
             call RESET_BALL_POSITION
