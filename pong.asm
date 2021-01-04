@@ -4,7 +4,7 @@
 .data
 ;   ========== VARS TO CONTROLL COLLESION ==========
     WINDOW_WIDTH dw 280h                        ; 320 Pixels 640
-    WINDOW_HEIGHT dw 150h                        ; 120 Pixels 480 => old value 180 <=
+    WINDOW_HEIGHT dw 165h                        ; 120 Pixels 480 => old value 180 <=
     WINDOW_BOUNDS DW 6h                         ; to check collesion early
     STATUS_BAR_START_ROW_UPPER_PART db 22       ; the start of the status bar => Score part
     STATUS_BAR_START_ROW_LOWER_PART db 28       ; the start of the status bar => end game part
