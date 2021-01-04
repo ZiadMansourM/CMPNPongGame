@@ -203,7 +203,7 @@ USER_NAME_PLAYER1 PROC NEAR
 
 	CHECK_LESS_CAPITAL_Z:  
 	                       mov ah, MY_USER_NAME_PLAYER1[2]
-	                       cmp ah, 5Ah 
+	                       cmp ah, 5Bh 
 	                       JL  CONTINUE                    ; if character less than 'Z' => valid character and continue the program
 	                       jmp CHECK_SMALL_CHARACTERS      ; else => it could be lower case character => check them
 
