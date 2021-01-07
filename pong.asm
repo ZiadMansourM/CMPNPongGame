@@ -4,9 +4,10 @@
 .data
 ;   ========== VARS TO CONTROLL COLLESION ==========
     WINDOW_WIDTH dw 280h                        ; 320 Pixels 640
-    WINDOW_HEIGHT dw 180h                        ; 120 Pixels 480
+    WINDOW_HEIGHT dw 165h                        ; 120 Pixels 480 => old value 180 <=
     WINDOW_BOUNDS DW 6h                         ; to check collesion early
-    STATUS_BAR_START_ROW db 16                  ; the start of the status bar
+    STATUS_BAR_START_ROW_UPPER_PART db 22       ; the start of the status bar => Score part
+    STATUS_BAR_START_ROW_LOWER_PART db 28       ; the start of the status bar => end game part
 ;   ========== VARS TO CONTROL MOVEMENT ==========
     OLD_TIME DB 0                               ; old time
     BALL_ORIGINAL_X DW 140h                     ; X-position of the point of the center 
@@ -56,6 +57,7 @@
     WLCOME_MSG_LENGTH  EQU 28
     LAST_MSG           db  'Please Press any key to continue', '$'
     ERROR_NAME_MSG     db  10, 9, 'Your name should start with a letter, Please enter it again: ','$'
+    DASHED_LINE db '--------------------------------------------------------------------------------','$'
 ;   ========== Transition between level One and Two ==========
     trans_msg          db  'LEVEL "2"'
     trans_msg_LENGTH   EQU 9
@@ -65,7 +67,7 @@
     end_game_msg       db  '*To end the program press ESC','$'
     start_row          db  9                  ; row position of main menu message 
     start_column       db 25                  ; row position of main menu message
-    end_game_msg_part1 db 10, 13, '-To end the game with ', '$'
+    end_game_msg_part1 db '-To end the game with ', '$'
     end_game_msg_part2 db 'Press F4', '$'
     dummy_variable_to_count_strings_length db 0h 
 
@@ -201,7 +203,7 @@ USER_NAME_PLAYER1 PROC NEAR
 
 	CHECK_LESS_CAPITAL_Z:  
 	                       mov ah, MY_USER_NAME_PLAYER1[2]
-	                       cmp ah, 5Ah 
+	                       cmp ah, 5Bh 
 	                       JL  CONTINUE                    ; if character less than 'Z' => valid character and continue the program
 	                       jmp CHECK_SMALL_CHARACTERS      ; else => it could be lower case character => check them
 
@@ -760,20 +762,18 @@ DRAW_SCORE ENDP
 
 ;========================================================================= STATUS BAR PROCEDURE =========================================================================
 STATUS_BAR PROC NEAR 
-;Set cursor position to row 15 and column 0 and print a dashed line
+;Set cursor position to row 15 and column 0 and print a dashed line 
 	     mov ah, 02h
-	     mov dh, STATUS_BAR_START_ROW     	; row 15
+	     mov dh, STATUS_BAR_START_ROW_UPPER_PART     	; row 15
 	     mov dl, 0                        	; column 0
 	     int 10h
-	     mov ah, 0Ah                        ; int 10h on ah = 0Ah => write character at cursor position
-	     mov cx, 80                         ; number of repetitions of the character '-'
-	     mov al, '-'                        ; character to be printed stored in al
-         mov bl, 0Ah                        ; Ziad: green color
-	     int 10h
+         mov ah, 09h                        ; print dashed line
+	     mov dx, offset DASHED_LINE 
+	     int 21h 
 ; ========== Player 1 ==========
 ;Set cursor position to row 11 and column 0 and print the score of the players
          mov ah, 02h
-         mov al, STATUS_BAR_START_ROW
+         mov al, STATUS_BAR_START_ROW_UPPER_PART
          add al, 1
 	     mov dh, al                       	; row 16
 	     mov dl, 0                        	; column 0
@@ -802,13 +802,11 @@ STATUS_BAR PROC NEAR
 	     mov dx, offset MSG_TO_DISPLAY_SCORE__IN_GAME_MODE 
 	     int 21h 
 ; display score of left player 
-         mov ah, 0Ah                        ; print player's score
-	     mov al, LEFT_PLAYER_SCORE          ; character t be printed
-         mov cx, 1                          ; number of repetitions of the printed character
-	     int 10h
-
+         mov ah, 02h                         ; print player's score
+         mov dl, LEFT_PLAYER_SCORE          ; character t be printed
+         int 21h
 ; ========== player 2 ==========
-;Count the length of the left player username  to set the cursor position after it
+;Count the length of the left player username to set the cursor position after it
                      mov SI, offset MY_USER_NAME_PLAYER2[2]
                      mov ch, 0h
     STRING4_NOT_ENDED:
@@ -818,8 +816,6 @@ STATUS_BAR PROC NEAR
 					 INC SI 
 					 jmp STRING4_NOT_ENDED
     DONE_COUNTING4:
-                     ;add ch, 30h 
-					 sub ch, 1h
                      mov dummy_variable_to_count_strings_length, ch 
 ;Count the length of "'s score: " message to set the cursor position after it
                      mov SI, offset MSG_TO_DISPLAY_SCORE__IN_GAME_MODE
@@ -832,13 +828,12 @@ STATUS_BAR PROC NEAR
 					 jmp STRING5_NOT_ENDED
     DONE_COUNTING5:
                      add ch, dummy_variable_to_count_strings_length
-                     add ch, 2                ; to leave space for the score
-                     ;mov dummy_variable_to_count_strings_length, ch                     
+                     add ch, 2                ; to leave space for the score                   
 ;Set cursor position to row 11 and column 0 and print the score of the players
          mov ah, 02h
-         mov al, STATUS_BAR_START_ROW
+         mov al, STATUS_BAR_START_ROW_UPPER_PART
          add al, 1
-         mov cl, 40
+         mov cl, 80                         ; number of columns
          sub cl, ch
 	     mov dh, al                       	; row 16
 	     mov dl, cl                        	; column 0
@@ -856,31 +851,29 @@ STATUS_BAR PROC NEAR
 	     mov dx, offset MSG_TO_DISPLAY_SCORE__IN_GAME_MODE 
 	     int 21h 
 ; display score of right player 
-         mov ah, 0Ah                        ; print player's score
-	     mov al, RIGHT_PLAYER_SCORE      ; character t be printed
-         mov cx, 1                          ; number of repetitions of the printed character
-	     int 10h
+         mov ah, 02h                         ; print player's score
+         mov dl, RIGHT_PLAYER_SCORE          ; character t be printed
+         int 21h
 ;Set cursor position to row 17 and column 0 and print a dashed line
 	     mov ah, 02h
-         mov al, STATUS_BAR_START_ROW
+         mov al, STATUS_BAR_START_ROW_UPPER_PART
          add al, 2
 	     mov dh, al                       	; row 17
 	     mov dl, 0                        	; column 0
 	     int 10h
-	     mov ah, 0Ah                        ; int 10h on ah = 0Ah => write character at cursor position
-	     mov cx, 80                         ; number of repetitions of the character '-'
-	     mov al, '-'                        ; character to be printed stored in al
-	     int 10h
+         mov ah, 09h                        ; print dashed line
+	     mov dx, offset DASHED_LINE 
+	     int 21h 
 
+; ===================== End game part =====================
 ;Set cursor position to row 24 and column 0 and print a dashed line
 	     mov ah, 02h
-	     mov dh, 24                       	; row 24
-	     mov dl, 0                        	; column 0
+	     mov dh, STATUS_BAR_START_ROW_LOWER_PART                  	; row 27
+	     mov dl, 0                                               	; column 0
 	     int 10h
-	     mov ah, 0Ah                        ; int 10h on ah = 0Ah => write character at cursor position
-	     mov cx, 40                         ; number of repetitions of the character '-'
-	     mov al, '-'                        ; character to be printed stored in al
-	     int 10h
+         mov ah, 09h                        ; print dashed line
+	     mov dx, offset DASHED_LINE 
+	     int 21h 
 ;Print end game message 
          mov ah, 09h                        ; print this message => To end the game with
 	     mov dx, offset end_game_msg_part1 
@@ -900,9 +893,8 @@ STATUS_BAR PROC NEAR
 					 jmp STRING2_NOT_ENDED
     DONE_COUNTING2:
                      ;add ch, 30h 
-					 sub ch, 1h
+					 ;sub ch, 1h
                      mov dummy_variable_to_count_strings_length, ch
-
 ;Count the length of the left player username to set the cursor position after it
                      mov SI, offset MY_USER_NAME_PLAYER1[2]
                      mov ch, 0h
@@ -914,11 +906,12 @@ STATUS_BAR PROC NEAR
 					 jmp STRING3_NOT_ENDED
     DONE_COUNTING3:
                      ;add ch, 30h 
-					 sub ch, 1h
+					 ;sub ch, 1h
                      add ch, dummy_variable_to_count_strings_length
 
          mov ah, 02h                        ; Set cursor position
-	     mov dh, 24                       	; row 24
+         mov dh, STATUS_BAR_START_ROW_LOWER_PART
+	     add dh, 1                       	; row 28
 	     mov dl, ch                        	; column after the name and first message length
 	     int 10h
          mov ah, 09h                        ; print this message => Press F4
