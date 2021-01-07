@@ -33,6 +33,9 @@
 ;   ========== PADDELS SIZE ==========
     PADDLE_WIDTH dw 05h                         ;  PADDLE Width  (how many columns)
     PADDLE_HEIGHT dw 3Fh                        ;  PADDLE Height (how many rows)
+    PADDLE_ELONGATED_HEIGHT DW 6FH
+    PADDLE_LEFT_HEIGHT dw 3Fh         
+    PADDLE_RIGHT_HEIGHT dw 3Fh                
 ;   ========== PADDEL VELOCITY ==========
     PADDLE_VELOCITY dw 07h                      ; Paddel Vertical Velocity
 ;   ========== VARS USED in GAVE_OVER Page ==========
@@ -70,6 +73,13 @@
     end_game_msg_part1 db '-To end the game with ', '$'
     end_game_msg_part2 db 'Press F4', '$'
     dummy_variable_to_count_strings_length db 0h 
+;   ===========Elongation Card Variables=========
+    Is_Two  db 2h    
+    NEW_PADDLE_HEIGHT db 2fh
+    LEFT_PADDLE_FLAG_HEIGHT db 0h
+    RIGHT_PADDLE_FLAG_HEIGHT db 0h 
+    ELONGATION_ONCE_LEFT DB  00H
+    ELONGATION_ONCE_RIGHT DB  00H 
 
 .code 
     main proc
@@ -120,7 +130,10 @@ GAME_MODE:
             call MOV_BALL                          ; move the ball
             call DRAW_BALL                         ; draw the ball
 
+            CAll CHECK_ELONGATE_CARD                ;call the Elongate card
+
             call MOVE_PADDLES                      ; move paddles
+            
             call DRAW_PADDLES                      ; draw paddles
 
             call DRAW_SCORE                        ; draw score
@@ -344,6 +357,10 @@ USER_NAME_PLAYER2 ENDP
 ;       return if After setting the ball to center point as a result for hetting any of the left of right boundry 
         RESET_POSITION_LEFT:
             add RIGHT_PLAYER_SCORE, 1
+;           added for Elongation card 
+            MOV AX ,PADDLE_HEIGHT
+            MOV PADDLE_LEFT_HEIGHT,AX
+;           finish addinf for elongation card
             ADD BALL_VELOCITY_CURRENT,2     ; to get the index of the next velocity(2 as it is an array of words) 
             INC BALL_VELOCITY_TOT
             cmp BALL_VELOCITY_CURRENT,12h   ; the last index in our array
@@ -353,6 +370,10 @@ USER_NAME_PLAYER2 ENDP
             ret
         RESET_POSITION_RIGHT:
             add LEFT_PLAYER_SCORE, 1
+;           added for elongation card
+            MOV AX ,PADDLE_HEIGHT
+            MOV PADDLE_RIGHT_HEIGHT,AX
+;           finish add for elongation
             ADD BALL_VELOCITY_CURRENT,2     ; to get the index of the next velocity(2 as it is an array of words) 
             INC BALL_VELOCITY_TOT
             cmp BALL_VELOCITY_CURRENT,12h   ; the last index in our array
@@ -430,7 +451,7 @@ USER_NAME_PLAYER2 ENDP
         JNG CHECK_COLLISION_LEFT_PADDLE         ; IF (Greater) THEN {Collesion with right paddle;} ELSE {Check if their exist a collision with left paddle;}
 ;       [4]: BALL_Y < (PADDLE_RIGHT_Y + PADDLE_HEIGHT)
         mov ax, PADDLE_RIGHT_Y
-        add ax, PADDLE_HEIGHT                   ; (PADDLE_RIGHT_Y + PADDLE_HEIGHT)
+        add ax, PADDLE_RIGHT_HEIGHT                   ; (PADDLE_RIGHT_Y + PADDLE_HEIGHT)
         cmp BALL_Y, ax                          ; [4]: compares the BALL_Y ~ (PADDLE_RIGHT_Y + PADDLE_HEIGHT)
         JNL CHECK_COLLISION_LEFT_PADDLE         ; IF (LESS) THEN {Collesion with right paddle;} ELSE {Check if their exist a collision with left paddle;}
 ;       THERE IS A COLLISION O_o with the right PADDLE
@@ -464,7 +485,7 @@ USER_NAME_PLAYER2 ENDP
         JNG OUT_PROC                            ; IF (Greater) THEN {Collesion with left paddle;} ELSE ELSE {EXIT;}
 ;       [4]: BALL_Y < (PADDLE_LEFT_Y + PADDLE_HEIGHT)
         mov ax, PADDLE_LEFT_Y
-        add ax, PADDLE_HEIGHT                   ; (PADDLE_LEFT_Y + PADDLE_HEIGHT)
+        add ax, PADDLE_LEFT_HEIGHT                   ; (PADDLE_LEFT_Y + PADDLE_HEIGHT)
         cmp BALL_Y, ax                          ; [4]: compares the BALL_Y ~ (PADDLE_LEFT_Y + PADDLE_HEIGHT)
         JNL OUT_PROC                            ; IF (LESS) THEN {Collesion with left paddle;} ELSE ELSE {EXIT;}
 ;       THERE IS A COLLISION O_o with the left PADDLE
@@ -541,14 +562,15 @@ DRAW_SCORE ENDP
         MOVE_LEFT_PADDLE_DOWN:
             mov ax, PADDLE_VELOCITY                 ; how mush shall the paddle move in the Y-direction
             add PADDLE_LEFT_Y, ax                   ; mov paddle
+;       check if the left paddle y is correct
             mov ax, WINDOW_HEIGHT                   ; Window height "the height of the screen"
             sub ax, WINDOW_BOUNDS                   ; the lower boundry
-            sub ax, PADDLE_HEIGHT                   ; the height of the paddle
+            sub ax, PADDLE_LEFT_HEIGHT              ; the height of the paddle
             cmp PADDLE_LEFT_Y, ax                   ; compare Y-position(paddle) ~ [Window height - lower boundry - height of the paddle]
             JG FIX_PADDLE_LEFT_BOTTOM_POSITION      ; IF (Greater) {Fix the position of the right paddle;} ELSE {continue;}
             JMP CHECK_RIGHT_PADDLE_MOVEMENT         ; check if a player is trying to move the right paddle
 ;       correct the paddle position if it exceded the lower boundry
-        FIX_PADDLE_LEFT_BOTTOM_POSITION:
+        FIX_PADDLE_LEFT_BOTTOM_POSITION:            ; FIX: ELONGATION WITHOUT PRESSING KEYS
             mov PADDLE_LEFT_Y, ax                   ; sets the Y-position(paddle) := [Window height - lower boundry - height of the paddle]
             jmp CHECK_RIGHT_PADDLE_MOVEMENT         ; check if a player is trying to move the right paddle
 
@@ -588,7 +610,7 @@ DRAW_SCORE ENDP
             add PADDLE_RIGHT_Y, ax                  ; mov paddle
             mov ax, WINDOW_HEIGHT                   ; Window height "the height of the screen"
             sub ax, WINDOW_BOUNDS                   ; the lower boundry
-            sub ax, PADDLE_HEIGHT                   ; the height of the paddle
+            sub ax, PADDLE_RIGHT_HEIGHT                   ; the height of the paddle
             cmp PADDLE_RIGHT_Y, ax                  ; compare Y-position(paddle) ~ [Window height - lower boundry - height of the paddle]
             JG FIX_PADDLE_RIGHT_BOTTOM_POSITION     ; IF (Greater) {Fix the position of the right paddle;} ELSE {continue;}
             JMP EXIT_PROC                           ; Everything went smoothly THEN {DONE, EXIT;}
@@ -693,8 +715,9 @@ DRAW_SCORE ENDP
             mov ax, dx                              ; the new Y-position(paddle)
             sub ax, PADDLE_LEFT_Y                   ; AX := new Y-position(paddle) - previous Y-position(paddle)
 ;           Check IF (AX >= Paddle Height) THEN {Draw The Right Paddle;} ELSE {continue;}
-            cmp ax, PADDLE_HEIGHT                   ; AX := Height(paddle)
+            cmp ax, PADDLE_LEFT_HEIGHT                   ; AX := Height(paddle)
             JNG DRAW_PADDLE_LEFT_HORIZANTAL         ; continue drawing the current "line || row"
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  "END: Drawing The left paddle"  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  "Drawing The right paddle"  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -735,7 +758,7 @@ DRAW_SCORE ENDP
             mov ax, dx                              ; the new Y-position(paddle)
             sub ax, PADDLE_RIGHT_Y                  ; AX := new Y-position(paddle) - previous Y-position(paddle)
 ;           Check IF (AX >= Paddle Height) THEN {EXIT;} ELSE {continue;}
-            cmp ax, PADDLE_HEIGHT                   ; AX := Height(paddle)
+            cmp ax, PADDLE_RIGHT_HEIGHT                   ; AX := Height(paddle)
             JNG DRAW_PADDLE_RIGHT_HORIZANTAL        ; continue drawing the current "line || row"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  "END: Drawing The right paddle"  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1012,5 +1035,50 @@ TRANSITION PROC NEAR
         JNZ USER_INPUT
     ret
 TRANSITION ENDP
+
+;===================================================================Elongation Card=====================================================================
+CHECK_ELONGATE_CARD PROC NEAR
+;   for the left paddle
+;   FRIST CHECK IF ELONGATED BEFORE?
+    CMP ELONGATION_ONCE_LEFT,1h
+    JE CHECK_RIGHT_PADDLE_FLAG
+;   END OF CHECK
+    mov al,LEFT_PLAYER_SCORE
+    sub al,RIGHT_PLAYER_SCORE
+    cmp al,Is_Two
+    JE CHANGE_LEFT_PADDLE_HEIGHT
+    jmp CHECK_RIGHT_PADDLE_FLAG
+
+    CHANGE_LEFT_PADDLE_HEIGHT:
+    MOV AX,PADDLE_ELONGATED_HEIGHT
+    MOV PADDLE_LEFT_HEIGHT,AX
+    MOV ELONGATION_ONCE_LEFT,1H  ;CHANGES THE STATUS TO MAKE SURE IT ALREADY ELONGATED BEFORE
+
+
+
+;   for the right paddle
+    CHECK_RIGHT_PADDLE_FLAG:
+;   CHECK IF THE RIGHT PADDLE ELONGATED BEFORE OR NOT?
+    CMP ELONGATION_ONCE_RIGHT,1h
+    JE LEAVE_PROC
+;   END OF CHECK
+    mov al,RIGHT_PLAYER_SCORE
+    sub al,LEFT_PLAYER_SCORE
+    cmp al,Is_Two
+    JE CHANGE_RIGHT_PADDLE_FLAG
+    
+    jmp LEAVE_PROC
+
+    CHANGE_RIGHT_PADDLE_FLAG:
+    MOV AX,PADDLE_ELONGATED_HEIGHT
+    MOV PADDLE_RIGHT_HEIGHT,AX
+    MOV ELONGATION_ONCE_RIGHT,1H ;CHANGES THE STATUS TO MAKE SURE IT ALREADY ELONGATED BEFORE
+
+;   this label is done to leave this procedure
+    LEAVE_PROC:
+    ret
+
+    ret
+CHECK_ELONGATE_CARD ENDP
 
 end main
