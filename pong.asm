@@ -86,6 +86,8 @@
     Left_Freeze_Flag db 0h
     Froze_Once_Left db 00H
     Froze_Once_Right db 00H
+;   ==================DOUBLE CARD VARIABLES==================
+    COLLISION_COUNTER DB 00H
 
 .code 
     main proc
@@ -352,18 +354,27 @@ USER_NAME_PLAYER2 ENDP
 ;       Check if their is collesions with the upper boundries
         mov ax, WINDOW_BOUNDS                   ; Upper boundry
         cmp BALL_Y, ax                          ; compares the y-position(ball) ~ Upper boundry
-        JL NEG_VELOCITY_Y_TEMP                  ; IF (less) {THEN Collesion with Upper Boundry;} ELSE {continue;}
+        JL far ptr NEG_VELOCITY_Y_TEMP_TRANS                ; IF (less) {THEN Collesion with Upper Boundry;} ELSE {continue;}
 ;       Check if their is collesions with the lower boundries
         mov ax, WINDOW_HEIGHT                   ; Window height
         sub ax, BALL_SIZE                       ; size of the ball
         sub ax, WINDOW_BOUNDS                   ; lower boundry
-        cmp BALL_Y, ax                          ; compare Y-position(ball) ~ [Window height - size of the ball - lower boundry]
-        JG NEG_VELOCITY_Y_TEMP                  ; IF (Greater) {THEN Collesion with lower Boundry;} ELSE {continue;}
+        cmp BALL_Y, ax                           ; compare Y-position(ball) ~ [Window height - size of the ball - lower boundry]
+        JG  far ptr NEG_VELOCITY_Y_TEMP_TRANS                 ; IF (Greater) {THEN Collesion with lower Boundry;} ELSE {continue;}
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
         jmp NEXT
+        NEG_VELOCITY_Y_TEMP_TRANS:
+        JMP NEG_VELOCITY_Y_TEMP
 ;       return if After setting the ball to center point as a result for hetting any of the left of right boundry 
         RESET_POSITION_LEFT:
+            cmp COLLISION_COUNTER,0Ah
+            JL  NORMAL_POINTS_RIGHT
+            ADD RIGHT_PLAYER_SCORE,2
+            MOV COLLISION_COUNTER,00H
+            JMP DOUBLE_POINTS_RIGHT
+            NORMAL_POINTS_RIGHT:
             add RIGHT_PLAYER_SCORE, 1
+            DOUBLE_POINTS_RIGHT:
 ;           added for freeze card
             mov Left_Freeze_Flag,00H
 ;           end of freeze card
@@ -379,7 +390,14 @@ USER_NAME_PLAYER2 ENDP
             call RESET_BALL_POSITION        
             ret
         RESET_POSITION_RIGHT:
+            cmp COLLISION_COUNTER,0ah
+            JL  NORMAL_POINTS_LEFT
+            ADD LEFT_PLAYER_SCORE,2
+            MOV COLLISION_COUNTER,00H
+            JMP DOUBLE_POINTS_LEFT
+            NORMAL_POINTS_LEFT:
             add LEFT_PLAYER_SCORE, 1
+            DOUBLE_POINTS_LEFT:
 ;           added for freeze card right  
             mov Right_Freeze_Flag ,00H
 ;           end of freeze card right
@@ -464,10 +482,11 @@ USER_NAME_PLAYER2 ENDP
         JNG CHECK_COLLISION_LEFT_PADDLE         ; IF (Greater) THEN {Collesion with right paddle;} ELSE {Check if their exist a collision with left paddle;}
 ;       [4]: BALL_Y < (PADDLE_RIGHT_Y + PADDLE_HEIGHT)
         mov ax, PADDLE_RIGHT_Y
-        add ax, PADDLE_RIGHT_HEIGHT                   ; (PADDLE_RIGHT_Y + PADDLE_HEIGHT)
+        add ax, PADDLE_RIGHT_HEIGHT             ; (PADDLE_RIGHT_Y + PADDLE_HEIGHT)
         cmp BALL_Y, ax                          ; [4]: compares the BALL_Y ~ (PADDLE_RIGHT_Y + PADDLE_HEIGHT)
         JNL CHECK_COLLISION_LEFT_PADDLE         ; IF (LESS) THEN {Collesion with right paddle;} ELSE {Check if their exist a collision with left paddle;}
 ;       THERE IS A COLLISION O_o with the right PADDLE
+        add COLLISION_COUNTER,1h                ; Counts the coolison with paddles
         NEG BALL_VELOCITY_X                     ; reverse the X-Velosity(Ball)
         ret
 
@@ -498,10 +517,11 @@ USER_NAME_PLAYER2 ENDP
         JNG OUT_PROC                            ; IF (Greater) THEN {Collesion with left paddle;} ELSE ELSE {EXIT;}
 ;       [4]: BALL_Y < (PADDLE_LEFT_Y + PADDLE_HEIGHT)
         mov ax, PADDLE_LEFT_Y
-        add ax, PADDLE_LEFT_HEIGHT                   ; (PADDLE_LEFT_Y + PADDLE_HEIGHT)
+        add ax, PADDLE_LEFT_HEIGHT              ; (PADDLE_LEFT_Y + PADDLE_HEIGHT)
         cmp BALL_Y, ax                          ; [4]: compares the BALL_Y ~ (PADDLE_LEFT_Y + PADDLE_HEIGHT)
         JNL OUT_PROC                            ; IF (LESS) THEN {Collesion with left paddle;} ELSE ELSE {EXIT;}
 ;       THERE IS A COLLISION O_o with the left PADDLE
+        add COLLISION_COUNTER,1h                ; Counts the coolison with paddles
         NEG BALL_VELOCITY_X                     ; reverse the X-Velosity(Ball)
         ret
 
@@ -1141,4 +1161,6 @@ Leave_This_Proc:
 
 RET
 CHECK_FREZE_CARD ENDP
+
+
 end main
