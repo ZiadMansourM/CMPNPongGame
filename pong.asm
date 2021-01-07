@@ -4,7 +4,7 @@
 .data
 ;   ========== VARS TO CONTROLL COLLESION ==========
     WINDOW_WIDTH dw 280h                        ; 320 Pixels 640
-    WINDOW_HEIGHT dw 165h                        ; 120 Pixels 480 => old value 180 <=
+    WINDOW_HEIGHT dw 165h                       ; 120 Pixels 480 => old value 180 <=
     WINDOW_BOUNDS DW 6h                         ; to check collesion early
     STATUS_BAR_START_ROW_UPPER_PART db 22       ; the start of the status bar => Score part
     STATUS_BAR_START_ROW_LOWER_PART db 28       ; the start of the status bar => end game part
@@ -528,6 +528,7 @@ DRAW_SCORE ENDP
         MOVE_LEFT_PADDLE_UP:
             mov ax, PADDLE_VELOCITY                 ; how mush shall the paddle move in the Y-direction
             sub PADDLE_LEFT_Y, ax                   ; mov paddle
+;           check if paddle left Y is correct 
             mov ax, WINDOW_BOUNDS                   ; upper boundry
             cmp PADDLE_LEFT_Y, ax                   ; compares the y-position(paddel) ~ upper boundry
             JL FIX_LEFT_PADDLE_TOP_POSITION         ; IF(LESS) THEN {Fix the position of the left paddle;} ELSE {continue;}
@@ -969,7 +970,7 @@ MAIN_MENU PROC NEAR
 	
 MAIN_MENU ENDP
 ;========================================================================== GAME OVER PROCEDURE ==========================================================================
-GAME_OVER PROC NEAR
+GAME_OVER PROC NEAR ; TODO: Fix poistion
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     mov si, @data                    ;moves to si the location in memory of the data segment
