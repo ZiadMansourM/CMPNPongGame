@@ -80,6 +80,12 @@
     RIGHT_PADDLE_FLAG_HEIGHT db 0h 
     ELONGATION_ONCE_LEFT DB  00H
     ELONGATION_ONCE_RIGHT DB  00H 
+;   ===================freeze card variables================  
+    Is_Three db 3h
+    Right_Freeze_Flag db 0h
+    Left_Freeze_Flag db 0h
+    Froze_Once_Left db 00H
+    Froze_Once_Right db 00H
 
 .code 
     main proc
@@ -131,6 +137,7 @@ GAME_MODE:
             call DRAW_BALL                         ; draw the ball
 
             CAll CHECK_ELONGATE_CARD                ;call the Elongate card
+            CAll CHECK_FREZE_CARD                  ;call the freeze card
 
             call MOVE_PADDLES                      ; move paddles
             
@@ -357,6 +364,9 @@ USER_NAME_PLAYER2 ENDP
 ;       return if After setting the ball to center point as a result for hetting any of the left of right boundry 
         RESET_POSITION_LEFT:
             add RIGHT_PLAYER_SCORE, 1
+;           added for freeze card
+            mov Left_Freeze_Flag,00H
+;           end of freeze card
 ;           added for Elongation card 
             MOV AX ,PADDLE_HEIGHT
             MOV PADDLE_LEFT_HEIGHT,AX
@@ -370,6 +380,9 @@ USER_NAME_PLAYER2 ENDP
             ret
         RESET_POSITION_RIGHT:
             add LEFT_PLAYER_SCORE, 1
+;           added for freeze card right  
+            mov Right_Freeze_Flag ,00H
+;           end of freeze card right
 ;           added for elongation card
             MOV AX ,PADDLE_HEIGHT
             MOV PADDLE_RIGHT_HEIGHT,AX
@@ -531,6 +544,9 @@ DRAW_SCORE ENDP
     ;   to check which key was pressed
         mov ah, 00h                                 ; read the char > al
         int 16h                                     ; Excute according to the above configurations "ah"
+    ;   check for the freezing state of the leftplayer
+        cmp Left_Freeze_Flag,1H
+        JE CHECK_RIGHT_PADDLE_MOVEMENT  
     ;   check if 'w', 'W' was pressed
         CMP al, 77h                                 ; 'w' = 77h
         je MOVE_LEFT_PADDLE_UP                      ; move the left paddle up
@@ -581,6 +597,9 @@ DRAW_SCORE ENDP
 ;       check if a player is trying to move the right paddle
         CHECK_RIGHT_PADDLE_MOVEMENT:
         ;;;;;;;;;;;;;;;;;; WHICH KEY WAS PRESSED ;;;;;;;;;;;;;;;;;
+        ;   check for the freezing state of the leftplayer
+        cmp Right_Freeze_Flag,1H
+        JE EXIT_PROC
         ;   check if up_arrow key was pressed
             CMP ah, 72                              ; 72 is the scan code of the up arrow key
             je MOVE_RIGHT_PADDLE_UP                 ; move the right paddle up
@@ -1081,4 +1100,45 @@ CHECK_ELONGATE_CARD PROC NEAR
     ret
 CHECK_ELONGATE_CARD ENDP
 
+
+;======================================================FReeze card=========================================================
+CHECK_FREZE_CARD PROC NEAR 
+;   for the left player
+;   Check if the freeze card was used once for his favour before or not for the left player
+    cmp Froze_Once_Right,1H
+    JE check_Left_Frozen_before
+;   end of checking once  for the Freeze card for left player
+
+;   start to check the freeze card conditions for the right player
+    mov al,LEFT_PLAYER_SCORE
+    sub al,RIGHT_PLAYER_SCORE
+    cmp al,Is_Three
+    JE change_Right_Freeze_Flag
+    JMP check_Left_Frozen_before
+
+    change_Right_Freeze_Flag:
+    mov Right_Freeze_Flag,1H
+    MOV Froze_Once_Right,1H             ;IF( PLAYER ACTIVATED THE FREEZE CARD AGAINST HIS OPPONENT ONCE HE WILL NOT BE ABLE TO CHANGE IT AGAIN)
+
+    check_Left_Frozen_before:
+;   Check if the freeze was used once before for his favour or not for the right player
+    cmp  Froze_Once_Left,1H
+    JE Leave_This_Proc
+;   end of checking once  for the Freeze card for right player
+
+;   start to check the freeze card conditions for the right player
+    mov al,RIGHT_PLAYER_SCORE
+    sub al,LEFT_PLAYER_SCORE
+    cmp al,Is_Three
+    JE change_Left_Freeze_Flag
+    jmp Leave_This_Proc
+
+    change_Left_Freeze_Flag:
+    mov Left_Freeze_Flag,1H
+    MOV Froze_Once_Left,1H             ;IF( PLAYER ACTIVATED THE FREEZE CARD AGAINST HIS OPPONENT ONCE HE WILL NOT BE ABLE TO CHANGE IT AGAIN)
+;   this label is used to leave this procedure
+Leave_This_Proc:
+
+RET
+CHECK_FREZE_CARD ENDP
 end main
