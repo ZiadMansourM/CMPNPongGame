@@ -946,6 +946,7 @@ STATUS_BAR PROC NEAR
          JE PRINT_DASHED_LINE_FIRST                     ; CHECK if p was pressed
          JMP EXIT_IN_CHAT_GAME
 PRINT_DASHED_LINE_FIRST:
+; Consume the character in keyboard buffer
          mov ah,07h
          int 21h
 ;Set cursor position to row 24 and column 0 and print a dashed line
@@ -1002,21 +1003,30 @@ IN_GAME_CHAT_LEFT_PLAYER:
 
          mov FLAG_lEFT_PLAYER_MESSAGE, 01H   
 
+; ESC => to end chat, F5 => to switch between users
+WAIT_USER_INPUT_LEFT:
          mov ah, 00H
          int 16h 
-         cmp ah, 03FH                      ; IF user pressed F5 switch between players
-         JNE EXIT_IN_CHAT_GAME
-         jmp IN_GAME_CHAT_RIGTH_PLAYER
-
-TRANSITION_BETWEEN_PLAYERS:
-         cmp ah, 03FH                      ; IF user pressed F5 switch between players
-         JE IN_GAME_CHAT_LEFT_PLAYER
+         cmp ah, 01H                      ; IF user pressed F5 switch between players
+         JE TRANSITION_BETWEEN_PLAYERS2
+         cmp ah, 03FH 
+         JE IN_GAME_CHAT_RIGTH_PLAYER
+         mov ah, 00h
+         int 16h
+         JMP WAIT_USER_INPUT_LEFT
 
 IN_GAME_CHAT_RIGTH_PLAYER:
-         call DRAW_PADDLES     
+         call DRAW_PADDLES   
          call DRAW_BALL
-         call DRAW_SCORE 
+         call DRAW_SCORE   
+         ;jmp SKIP_THIS_PART
 
+         ;transition jump because jump out of range
+TRANSITION_BETWEEN_PLAYERS:
+         cmp ah, 03FH                      ; IF user pressed ESC close in game chat
+         JE IN_GAME_CHAT_LEFT_PLAYER
+
+SKIP_THIS_PART:
         ; This piece of code is just to clear the row 
          mov ah, 02h
          mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 25    
@@ -1028,7 +1038,14 @@ IN_GAME_CHAT_RIGTH_PLAYER:
          mov bl, 00H 
          mov cx, 40
          int 10h
+         jmp PLAYER2
 
+;transition jump because jump out of range
+TRANSITION_BETWEEN_PLAYERS2:
+         cmp ah, 01H                      ; IF user pressed F5 switch between players
+         JE EXIT_IN_CHAT_GAME
+
+PLAYER2:
          mov ah, 02h
          mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 25  
          add dh, 2                    	
@@ -1058,10 +1075,17 @@ IN_GAME_CHAT_RIGTH_PLAYER:
 
          mov FLAG_RIGHT_PLAYER_MESSAGE, 01H 
 
+         ; ESC => to end chat, F5 => to switch between users
+WAIT_USER_INPUT_RIGHT:
          mov ah, 00H
          int 16h 
-         cmp ah, 03FH                      ; IF user pressed F5 switch between players
+         cmp ah, 01H                      ; IF user pressed ESC to end chat mode
+         JE EXIT_IN_CHAT_GAME
+         cmp ah, 03FH                     ; F5 => to switch between players
          JE TRANSITION_BETWEEN_PLAYERS
+         mov ah,00h
+         int 16h
+         JMP WAIT_USER_INPUT_RIGHT
 
 EXIT_IN_CHAT_GAME:
 ; ========== Player 1 message ==========
