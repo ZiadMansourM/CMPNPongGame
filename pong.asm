@@ -6,8 +6,15 @@
     WINDOW_WIDTH dw 280h                        ; 320 Pixels 640
     WINDOW_HEIGHT dw 165h                       ; 120 Pixels 480 => old value 180 <=
     WINDOW_BOUNDS DW 6h                         ; to check collesion early
+;   ========== Status bar variables ==========
     STATUS_BAR_START_ROW_UPPER_PART db 22       ; the start of the status bar => Score part
     STATUS_BAR_START_ROW_LOWER_PART db 28       ; the start of the status bar => end game part
+    STATUS_BAR_START_ROW_MIDDLE_PART db 25      ; the start of the status bar => in-game chat part
+    LEFT_PLAYER_INGAME_MESSAGE DB 15, ?, 15 dup('$')
+    RIGHT_PLAYER_INGAME_MESSAGE DB 15, ?, 15 dup('$')
+    FLAG_lEFT_PLAYER_MESSAGE DB 00H             ; To check if a string was entered before
+    FLAG_RIGHT_PLAYER_MESSAGE DB 00H
+    TO_CONCATINATE_STRINGS DB ' : $'
 ;   ========== VARS TO CONTROL MOVEMENT ==========
     OLD_TIME DB 0                               ; old time
     BALL_ORIGINAL_X DW 140h                     ; X-position of the point of the center 
@@ -80,6 +87,14 @@
     RIGHT_PADDLE_FLAG_HEIGHT db 0h 
     ELONGATION_ONCE_LEFT DB  00H
     ELONGATION_ONCE_RIGHT DB  00H 
+;   ===================freeze card variables================  
+    Is_Three db 3h
+    Right_Freeze_Flag db 0h
+    Left_Freeze_Flag db 0h
+    Froze_Once_Left db 00H
+    Froze_Once_Right db 00H
+;   ==================DOUBLE CARD VARIABLES==================
+    COLLISION_COUNTER DB 00H
 
 .code 
     main proc
@@ -134,6 +149,7 @@ GAME_MODE:
             call DRAW_BALL                         ; draw the ball
 
             CAll CHECK_ELONGATE_CARD                ;call the Elongate card
+            CAll CHECK_FREZE_CARD                  ;call the freeze card
 
             call DRAW_SCORE                        ; draw score
 
@@ -344,18 +360,30 @@ USER_NAME_PLAYER2 ENDP
 ;       Check if their is collesions with the upper boundries
         mov ax, WINDOW_BOUNDS                   ; Upper boundry
         cmp BALL_Y, ax                          ; compares the y-position(ball) ~ Upper boundry
-        JL NEG_VELOCITY_Y_TEMP                  ; IF (less) {THEN Collesion with Upper Boundry;} ELSE {continue;}
+        JL far ptr NEG_VELOCITY_Y_TEMP_TRANS                ; IF (less) {THEN Collesion with Upper Boundry;} ELSE {continue;}
 ;       Check if their is collesions with the lower boundries
         mov ax, WINDOW_HEIGHT                   ; Window height
         sub ax, BALL_SIZE                       ; size of the ball
         sub ax, WINDOW_BOUNDS                   ; lower boundry
-        cmp BALL_Y, ax                          ; compare Y-position(ball) ~ [Window height - size of the ball - lower boundry]
-        JG NEG_VELOCITY_Y_TEMP                  ; IF (Greater) {THEN Collesion with lower Boundry;} ELSE {continue;}
+        cmp BALL_Y, ax                           ; compare Y-position(ball) ~ [Window height - size of the ball - lower boundry]
+        JG  far ptr NEG_VELOCITY_Y_TEMP_TRANS                 ; IF (Greater) {THEN Collesion with lower Boundry;} ELSE {continue;}
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
         jmp NEXT
+        NEG_VELOCITY_Y_TEMP_TRANS:
+        JMP NEG_VELOCITY_Y_TEMP
 ;       return if After setting the ball to center point as a result for hetting any of the left of right boundry 
         RESET_POSITION_LEFT:
+            cmp COLLISION_COUNTER,0Ah
+            JL  NORMAL_POINTS_RIGHT
+            ADD RIGHT_PLAYER_SCORE,2
+            MOV COLLISION_COUNTER,00H
+            JMP DOUBLE_POINTS_RIGHT
+            NORMAL_POINTS_RIGHT:
             add RIGHT_PLAYER_SCORE, 1
+            DOUBLE_POINTS_RIGHT:
+;           added for freeze card
+            mov Left_Freeze_Flag,00H
+;           end of freeze card
 ;           added for Elongation card 
             MOV AX ,PADDLE_HEIGHT
             MOV PADDLE_LEFT_HEIGHT,AX
@@ -368,7 +396,17 @@ USER_NAME_PLAYER2 ENDP
             call RESET_BALL_POSITION        
             ret
         RESET_POSITION_RIGHT:
+            cmp COLLISION_COUNTER,0ah
+            JL  NORMAL_POINTS_LEFT
+            ADD LEFT_PLAYER_SCORE,2
+            MOV COLLISION_COUNTER,00H
+            JMP DOUBLE_POINTS_LEFT
+            NORMAL_POINTS_LEFT:
             add LEFT_PLAYER_SCORE, 1
+            DOUBLE_POINTS_LEFT:
+;           added for freeze card right  
+            mov Right_Freeze_Flag ,00H
+;           end of freeze card right
 ;           added for elongation card
             MOV AX ,PADDLE_HEIGHT
             MOV PADDLE_RIGHT_HEIGHT,AX
@@ -450,10 +488,11 @@ USER_NAME_PLAYER2 ENDP
         JNG CHECK_COLLISION_LEFT_PADDLE         ; IF (Greater) THEN {Collesion with right paddle;} ELSE {Check if their exist a collision with left paddle;}
 ;       [4]: BALL_Y < (PADDLE_RIGHT_Y + PADDLE_HEIGHT)
         mov ax, PADDLE_RIGHT_Y
-        add ax, PADDLE_RIGHT_HEIGHT                   ; (PADDLE_RIGHT_Y + PADDLE_HEIGHT)
+        add ax, PADDLE_RIGHT_HEIGHT             ; (PADDLE_RIGHT_Y + PADDLE_HEIGHT)
         cmp BALL_Y, ax                          ; [4]: compares the BALL_Y ~ (PADDLE_RIGHT_Y + PADDLE_HEIGHT)
         JNL CHECK_COLLISION_LEFT_PADDLE         ; IF (LESS) THEN {Collesion with right paddle;} ELSE {Check if their exist a collision with left paddle;}
 ;       THERE IS A COLLISION O_o with the right PADDLE
+        add COLLISION_COUNTER,1h                ; Counts the coolison with paddles
         NEG BALL_VELOCITY_X                     ; reverse the X-Velosity(Ball)
         ret
 
@@ -484,10 +523,11 @@ USER_NAME_PLAYER2 ENDP
         JNG OUT_PROC                            ; IF (Greater) THEN {Collesion with left paddle;} ELSE ELSE {EXIT;}
 ;       [4]: BALL_Y < (PADDLE_LEFT_Y + PADDLE_HEIGHT)
         mov ax, PADDLE_LEFT_Y
-        add ax, PADDLE_LEFT_HEIGHT                   ; (PADDLE_LEFT_Y + PADDLE_HEIGHT)
+        add ax, PADDLE_LEFT_HEIGHT              ; (PADDLE_LEFT_Y + PADDLE_HEIGHT)
         cmp BALL_Y, ax                          ; [4]: compares the BALL_Y ~ (PADDLE_LEFT_Y + PADDLE_HEIGHT)
         JNL OUT_PROC                            ; IF (LESS) THEN {Collesion with left paddle;} ELSE ELSE {EXIT;}
 ;       THERE IS A COLLISION O_o with the left PADDLE
+        add COLLISION_COUNTER,1h                ; Counts the coolison with paddles
         NEG BALL_VELOCITY_X                     ; reverse the X-Velosity(Ball)
         ret
 
@@ -530,6 +570,9 @@ DRAW_SCORE ENDP
     ;   to check which key was pressed
         mov ah, 00h                                 ; read the char > al
         int 16h                                     ; Excute according to the above configurations "ah"
+    ;   check for the freezing state of the leftplayer
+        cmp Left_Freeze_Flag,1H
+        JE CHECK_RIGHT_PADDLE_MOVEMENT  
     ;   check if 'w', 'W' was pressed
         CMP al, 77h                                 ; 'w' = 77h
         je MOVE_LEFT_PADDLE_UP                      ; move the left paddle up
@@ -581,6 +624,9 @@ DRAW_SCORE ENDP
 ;       check if a player is trying to move the right paddle
         CHECK_RIGHT_PADDLE_MOVEMENT:
         ;;;;;;;;;;;;;;;;;; WHICH KEY WAS PRESSED ;;;;;;;;;;;;;;;;;
+        ;   check for the freezing state of the leftplayer
+        cmp Right_Freeze_Flag,1H
+        JE EXIT_PROC
         ;   check if up_arrow key was pressed
             CMP ah, 72                              ; 72 is the scan code of the up arrow key
             je MOVE_RIGHT_PADDLE_UP                 ; move the right paddle up
@@ -889,6 +935,90 @@ STATUS_BAR PROC NEAR
 	     mov dx, offset DASHED_LINE 
 	     int 21h 
 
+; ===================== In game chat  =====================
+         mov ah,01h                          ; Check keyboard buffer has keypressed or not
+         int 16h                             ; ZF = 1 => keystroke not available, ZF = 0 => keystroke available
+    ;   Check if player inserted a string
+         PUSHF                               ; push flag register to check on ZF
+         POP BX                              ; pop flag register in BX to access it
+         AND BX, 0040H                       ; AND BX with 0000 0000 0100 0000 (ZF => bit 7) to only pass bit 7
+         CMP BX, 0040H                       ; compare BX with this 0000 0000 0100 0000 (check on bit 7)
+         JE EXIT_IN_CHAT_GAME                ; if equal => keystroke not available and continue, else take user input
+         cmp ah, 03Eh                        ; Check if F4 was pressed to stop the game
+         JE EXIT_IN_CHAT_GAME
+         cmp al, 77h                         ; Check if 'w' was pressed to ignore it
+         JE EXIT_IN_CHAT_GAME
+         cmp al, 57h                         ; Check if 'W' was pressed to ignore it
+         JE EXIT_IN_CHAT_GAME
+         cmp al, 73h                         ; Check if 's' was pressed to ignore it
+         JE EXIT_IN_CHAT_GAME
+         cmp al, 53h                         ; Check if 'S' was pressed to ignore it
+         JE EXIT_IN_CHAT_GAME
+         cmp ah, 72                          ; Check if up arrow was pressed to ignore it
+         JE EXIT_IN_CHAT_GAME
+         cmp ah, 80                          ; Check if down arrow was pressed to ignore it
+         JE EXIT_IN_CHAT_GAME
+
+         call DRAW_PADDLES     
+         call DRAW_BALL
+         call DRAW_SCORE 
+
+         mov ah, 02h
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART      ; row 25                       	
+	 mov dl, 0                                     ; column 0
+	 int 10h
+         mov ah, 09h                                   ; print left player's user name
+	 mov dx, offset MY_USER_NAME_PLAYER1[2] 
+	 int 21h
+         mov ah, 02h
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART   
+         mov dl, MY_USER_NAME_PLAYER1[1]
+	 int 10h
+         mov ah, 09h                                   ; prints ':'
+	 mov dx, offset TO_CONCATINATE_STRINGS  
+	 int 21h
+
+         mov ah, 02h
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART      
+         mov dl, MY_USER_NAME_PLAYER1[1]
+	     add dl, 3
+	     int 10h
+         mov ah, 0Ah                                    ; get input from user
+	     mov dx, offset LEFT_PLAYER_INGAME_MESSAGE
+         int 21h
+
+         mov FLAG_lEFT_PLAYER_MESSAGE, 01H              ; first message entered
+
+EXIT_IN_CHAT_GAME:
+; ========== Player 1 message ==========
+;Set cursor position to row 25 and column 0 and print the in-game chat of the players
+         cmp FLAG_lEFT_PLAYER_MESSAGE, 00H 
+         JE NO_CHAT_YET
+         mov ah, 02h
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART        ; row 25                       	
+	 mov dl, 0                                   ; column 0
+	 int 10h
+         mov ah, 09h                                 ; print left player's user name
+	 mov dx, offset MY_USER_NAME_PLAYER1[2] 
+	 int 21h
+         mov ah, 02h
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 16  
+         mov dl, MY_USER_NAME_PLAYER1[1]
+	 int 10h
+         mov ah, 09h                                 ; print ':'
+	 mov dx, offset TO_CONCATINATE_STRINGS 
+	 int 21h
+
+         mov ah, 02h
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART      
+         mov dl, MY_USER_NAME_PLAYER1[1]
+	 add dl, 3
+	 int 10h
+         mov ah, 09h                                 ; print left player's message
+	 mov dx, offset LEFT_PLAYER_INGAME_MESSAGE[2] 
+	 int 21h 
+
+NO_CHAT_YET:
 ; ===================== End game part =====================
 ;Set cursor position to row 24 and column 0 and print a dashed line
 	     mov ah, 02h
@@ -1081,5 +1211,48 @@ CHECK_ELONGATE_CARD PROC NEAR
 
     ret
 CHECK_ELONGATE_CARD ENDP
+
+
+;======================================================FReeze card=========================================================
+CHECK_FREZE_CARD PROC NEAR 
+;   for the left player
+;   Check if the freeze card was used once for his favour before or not for the left player
+    cmp Froze_Once_Right,1H
+    JE check_Left_Frozen_before
+;   end of checking once  for the Freeze card for left player
+
+;   start to check the freeze card conditions for the right player
+    mov al,LEFT_PLAYER_SCORE
+    sub al,RIGHT_PLAYER_SCORE
+    cmp al,Is_Three
+    JE change_Right_Freeze_Flag
+    JMP check_Left_Frozen_before
+
+    change_Right_Freeze_Flag:
+    mov Right_Freeze_Flag,1H
+    MOV Froze_Once_Right,1H             ;IF( PLAYER ACTIVATED THE FREEZE CARD AGAINST HIS OPPONENT ONCE HE WILL NOT BE ABLE TO CHANGE IT AGAIN)
+
+    check_Left_Frozen_before:
+;   Check if the freeze was used once before for his favour or not for the right player
+    cmp  Froze_Once_Left,1H
+    JE Leave_This_Proc
+;   end of checking once  for the Freeze card for right player
+
+;   start to check the freeze card conditions for the right player
+    mov al,RIGHT_PLAYER_SCORE
+    sub al,LEFT_PLAYER_SCORE
+    cmp al,Is_Three
+    JE change_Left_Freeze_Flag
+    jmp Leave_This_Proc
+
+    change_Left_Freeze_Flag:
+    mov Left_Freeze_Flag,1H
+    MOV Froze_Once_Left,1H             ;IF( PLAYER ACTIVATED THE FREEZE CARD AGAINST HIS OPPONENT ONCE HE WILL NOT BE ABLE TO CHANGE IT AGAIN)
+;   this label is used to leave this procedure
+Leave_This_Proc:
+
+RET
+CHECK_FREZE_CARD ENDP
+
 
 end main
