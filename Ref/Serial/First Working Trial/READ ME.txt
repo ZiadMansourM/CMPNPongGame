@@ -1,0 +1,6 @@
+[1]: Intializea and send any dammy data from PC1 to PC
+     *2codes
+     *one for send
+     *one for receive
+RUN TRANS on PC
+RUN RECEIVER on THE OTHER PC

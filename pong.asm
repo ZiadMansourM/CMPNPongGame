@@ -122,19 +122,18 @@ GAME_MODE:
 ;           clear screen to draw next frame
             call CLEAR_SCREEN                      ; we create the Illosion of movement by "Clear - move - draw - clear ...." 
             call STATUS_BAR
-            mov ah,01h                          ; get keypress from user to check if user pressed F4
+            mov ah,01h                             ; get keypress from user to check if user pressed F4
             int 16h
-            cmp ah, 03Eh                        ; Check if F4 was pressed (Scan code of F4 = 01 )
+            cmp ah, 03Eh                           ; Check if F4 was pressed (Scan code of F4 = 01 )
             JE START_GAME 
+
+            call MOVE_PADDLES                      ; move paddles
+            call DRAW_PADDLES                      ; draw paddles
 
             call MOV_BALL                          ; move the ball
             call DRAW_BALL                         ; draw the ball
 
             CAll CHECK_ELONGATE_CARD                ;call the Elongate card
-
-            call MOVE_PADDLES                      ; move paddles
-            
-            call DRAW_PADDLES                      ; draw paddles
 
             call DRAW_SCORE                        ; draw score
 
@@ -609,6 +608,7 @@ DRAW_SCORE ENDP
         MOVE_RIGHT_PADDLE_DOWN:
             mov ax, PADDLE_VELOCITY                 ; how mush shall the paddle move in the Y-direction
             add PADDLE_RIGHT_Y, ax                  ; mov paddle
+;           check if the left paddle y is correct
             mov ax, WINDOW_HEIGHT                   ; Window height "the height of the screen"
             sub ax, WINDOW_BOUNDS                   ; the lower boundry
             sub ax, PADDLE_RIGHT_HEIGHT                   ; the height of the paddle
