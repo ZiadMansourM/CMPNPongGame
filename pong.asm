@@ -10,11 +10,12 @@
     STATUS_BAR_START_ROW_UPPER_PART db 22       ; the start of the status bar => Score part
     STATUS_BAR_START_ROW_LOWER_PART db 28       ; the start of the status bar => end game part
     STATUS_BAR_START_ROW_MIDDLE_PART db 25      ; the start of the status bar => in-game chat part
-    LEFT_PLAYER_INGAME_MESSAGE DB 15, ?, 15 dup('$')
-    RIGHT_PLAYER_INGAME_MESSAGE DB 15, ?, 15 dup('$')
+    LEFT_PLAYER_INGAME_MESSAGE DB 35, ?, 35 dup('$')
+    RIGHT_PLAYER_INGAME_MESSAGE DB 35, ?, 35 dup('$')
     FLAG_lEFT_PLAYER_MESSAGE DB 00H             ; To check if a string was entered before
     FLAG_RIGHT_PLAYER_MESSAGE DB 00H
     TO_CONCATINATE_STRINGS DB ' : $'
+    SWITCH_BETWEEN_PLAYERS DB 'To switch the chat with the other player Press tab then F5','$'
 ;   ========== VARS TO CONTROL MOVEMENT ==========
     OLD_TIME DB 0                               ; old time
     BALL_ORIGINAL_X DW 140h                     ; X-position of the point of the center 
@@ -840,7 +841,7 @@ STATUS_BAR PROC NEAR
          mov ah, 09h                        ; print dashed line
 	     mov dx, offset DASHED_LINE 
 	     int 21h 
-; ========== Player 1 ==========
+; ========== Player 1 score ==========
 ;Set cursor position to row 11 and column 0 and print the score of the players
          mov ah, 02h
          mov al, STATUS_BAR_START_ROW_UPPER_PART
@@ -875,7 +876,7 @@ STATUS_BAR PROC NEAR
          mov ah, 02h                         ; print player's score
          mov dl, LEFT_PLAYER_SCORE          ; character t be printed
          int 21h
-; ========== player 2 ==========
+; ========== player 2 score ==========
 ;Count the length of the left player username to set the cursor position after it
                      mov SI, offset MY_USER_NAME_PLAYER2[2]
                      mov ch, 0h
@@ -939,84 +940,188 @@ STATUS_BAR PROC NEAR
          mov ah,01h                          ; Check keyboard buffer has keypressed or not
          int 16h                             ; ZF = 1 => keystroke not available, ZF = 0 => keystroke available
     ;   Check if player inserted a string
-         PUSHF                               ; push flag register to check on ZF
-         POP BX                              ; pop flag register in BX to access it
-         AND BX, 0040H                       ; AND BX with 0000 0000 0100 0000 (ZF => bit 7) to only pass bit 7
-         CMP BX, 0040H                       ; compare BX with this 0000 0000 0100 0000 (check on bit 7)
-         JE EXIT_IN_CHAT_GAME                ; if equal => keystroke not available and continue, else take user input
-         cmp ah, 03Eh                        ; Check if F4 was pressed to stop the game
-         JE EXIT_IN_CHAT_GAME
-         cmp al, 77h                         ; Check if 'w' was pressed to ignore it
-         JE EXIT_IN_CHAT_GAME
-         cmp al, 57h                         ; Check if 'W' was pressed to ignore it
-         JE EXIT_IN_CHAT_GAME
-         cmp al, 73h                         ; Check if 's' was pressed to ignore it
-         JE EXIT_IN_CHAT_GAME
-         cmp al, 53h                         ; Check if 'S' was pressed to ignore it
-         JE EXIT_IN_CHAT_GAME
-         cmp ah, 72                          ; Check if up arrow was pressed to ignore it
-         JE EXIT_IN_CHAT_GAME
-         cmp ah, 80                          ; Check if down arrow was pressed to ignore it
-         JE EXIT_IN_CHAT_GAME
+         cmp al,50h
+         JE PRINT_DASHED_LINE_FIRST                     ; CHECK if P was pressed
+         cmp al,70h
+         JE PRINT_DASHED_LINE_FIRST                     ; CHECK if p was pressed
+         JMP EXIT_IN_CHAT_GAME
+PRINT_DASHED_LINE_FIRST:
+         mov ah,07h
+         int 21h
+;Set cursor position to row 24 and column 0 and print a dashed line
+	     mov ah, 02h
+	     mov dh, STATUS_BAR_START_ROW_LOWER_PART                  	; row 27
+	     mov dl, 0                                               	; column 0
+	     int 10h
+         mov ah, 09h                        ; print dashed line
+	     mov dx, offset DASHED_LINE 
+	     int 21h 
+;Print end game message 
+         mov ah, 09h                        ; print this message => To end the game with
+	     mov dx, offset SWITCH_BETWEEN_PLAYERS 
+	     int 21h 
 
+IN_GAME_CHAT_LEFT_PLAYER:
          call DRAW_PADDLES     
          call DRAW_BALL
          call DRAW_SCORE 
+; This piece of code is just to clear the row 
+         mov ah, 02h
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 25                       	
+	     mov dl, 0                                   ; column 0
+	     int 10h
+         mov ah, 09h
+         mov al, 'A'
+         mov bl, 00H 
+         mov cx, 40
+         int 10h
 
          mov ah, 02h
-         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART      ; row 25                       	
-	 mov dl, 0                                     ; column 0
-	 int 10h
-         mov ah, 09h                                   ; print left player's user name
-	 mov dx, offset MY_USER_NAME_PLAYER1[2] 
-	 int 21h
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 25                       	
+	     mov dl, 0                                   ; column 0
+	     int 10h
+         mov ah, 09h                                 ; print left player's user name
+	     mov dx, offset MY_USER_NAME_PLAYER1[2] 
+	     int 21h
          mov ah, 02h
-         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART   
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 16  
          mov dl, MY_USER_NAME_PLAYER1[1]
-	 int 10h
-         mov ah, 09h                                   ; prints ':'
-	 mov dx, offset TO_CONCATINATE_STRINGS  
-	 int 21h
+	     int 10h
+         mov ah, 09h                                 ; print ':'
+	     mov dx, offset TO_CONCATINATE_STRINGS 
+	     int 21h
 
          mov ah, 02h
          mov dh, STATUS_BAR_START_ROW_MIDDLE_PART      
          mov dl, MY_USER_NAME_PLAYER1[1]
 	     add dl, 3
 	     int 10h
-         mov ah, 0Ah                                    ; get input from user
+         mov ah, 0Ah                      ; get input from user
 	     mov dx, offset LEFT_PLAYER_INGAME_MESSAGE
          int 21h
 
-         mov FLAG_lEFT_PLAYER_MESSAGE, 01H              ; first message entered
+         mov FLAG_lEFT_PLAYER_MESSAGE, 01H   
+
+         mov ah, 00H
+         int 16h 
+         cmp ah, 03FH                      ; IF user pressed F5 switch between players
+         JNE EXIT_IN_CHAT_GAME
+         jmp IN_GAME_CHAT_RIGTH_PLAYER
+
+TRANSITION_BETWEEN_PLAYERS:
+         cmp ah, 03FH                      ; IF user pressed F5 switch between players
+         JE IN_GAME_CHAT_LEFT_PLAYER
+
+IN_GAME_CHAT_RIGTH_PLAYER:
+         call DRAW_PADDLES     
+         call DRAW_BALL
+         call DRAW_SCORE 
+
+        ; This piece of code is just to clear the row 
+         mov ah, 02h
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 25    
+         add dh, 2                   	
+	     mov dl, 0                                   ; column 0
+	     int 10h
+         mov ah, 09h
+         mov al, 'A'
+         mov bl, 00H 
+         mov cx, 40
+         int 10h
+
+         mov ah, 02h
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 25  
+         add dh, 2                    	
+	     mov dl, 0                                   ; column 0
+	     int 10h
+         mov ah, 09h                                 ; print left player's user name
+	     mov dx, offset MY_USER_NAME_PLAYER2[2] 
+	     int 21h
+         mov ah, 02h
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 16  
+         add dh, 2
+         mov dl, MY_USER_NAME_PLAYER2[1]
+	     int 10h
+         mov ah, 09h                                 ; print ':'
+	     mov dx, offset TO_CONCATINATE_STRINGS 
+	     int 21h
+
+         mov ah, 02h
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART      
+         add dh, 2
+         mov dl, MY_USER_NAME_PLAYER2[1]
+	     add dl, 3
+	     int 10h
+         mov ah, 0Ah                      ; get input from user
+	     mov dx, offset RIGHT_PLAYER_INGAME_MESSAGE
+         int 21h
+
+         mov FLAG_RIGHT_PLAYER_MESSAGE, 01H 
+
+         mov ah, 00H
+         int 16h 
+         cmp ah, 03FH                      ; IF user pressed F5 switch between players
+         JE TRANSITION_BETWEEN_PLAYERS
 
 EXIT_IN_CHAT_GAME:
 ; ========== Player 1 message ==========
 ;Set cursor position to row 25 and column 0 and print the in-game chat of the players
          cmp FLAG_lEFT_PLAYER_MESSAGE, 00H 
-         JE NO_CHAT_YET
+         JE NO_CHAT_FOR_LEFT_PLAYER
          mov ah, 02h
-         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART        ; row 25                       	
-	 mov dl, 0                                   ; column 0
-	 int 10h
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 25                       	
+	     mov dl, 0                                   ; column 0
+	     int 10h
          mov ah, 09h                                 ; print left player's user name
-	 mov dx, offset MY_USER_NAME_PLAYER1[2] 
-	 int 21h
+	     mov dx, offset MY_USER_NAME_PLAYER1[2] 
+	     int 21h
          mov ah, 02h
          mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 16  
          mov dl, MY_USER_NAME_PLAYER1[1]
-	 int 10h
+	     int 10h
          mov ah, 09h                                 ; print ':'
-	 mov dx, offset TO_CONCATINATE_STRINGS 
-	 int 21h
+	     mov dx, offset TO_CONCATINATE_STRINGS 
+	     int 21h
 
          mov ah, 02h
          mov dh, STATUS_BAR_START_ROW_MIDDLE_PART      
          mov dl, MY_USER_NAME_PLAYER1[1]
-	 add dl, 3
-	 int 10h
+	     add dl, 3
+	     int 10h
          mov ah, 09h                                 ; print left player's message
-	 mov dx, offset LEFT_PLAYER_INGAME_MESSAGE[2] 
-	 int 21h 
+	     mov dx, offset LEFT_PLAYER_INGAME_MESSAGE[2] 
+	     int 21h 
+
+; ========== Player 2 message ==========
+         cmp FLAG_RIGHT_PLAYER_MESSAGE, 00H 
+NO_CHAT_FOR_LEFT_PLAYER:         
+         JE NO_CHAT_YET
+         mov ah, 02h
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 25   
+         add dh, 2                    	
+	     mov dl, 0                                   ; column 0
+	     int 10h
+         mov ah, 09h                                 ; print left player's user name
+	     mov dx, offset MY_USER_NAME_PLAYER2[2] 
+	     int 21h
+         mov ah, 02h
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 16  
+         add dh, 2
+         mov dl, MY_USER_NAME_PLAYER2[1]
+	     int 10h
+         mov ah, 09h                                 ; print ':'
+	     mov dx, offset TO_CONCATINATE_STRINGS 
+	     int 21h
+
+         mov ah, 02h
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART  
+         add dh, 2    
+         mov dl, MY_USER_NAME_PLAYER2[1]
+	     add dl, 3
+	     int 10h
+         mov ah, 09h                                 ; print left player's message
+	     mov dx, offset RIGHT_PLAYER_INGAME_MESSAGE[2] 
+	     int 21h 
 
 NO_CHAT_YET:
 ; ===================== End game part =====================
