@@ -11,12 +11,8 @@
     CURSER_COL DB 1
 ;DASHED_LINE db '--------------------------------------------------------------------------------','$'
 ; TO RECEIVE
-    ;VALUE   DB ?
-    ;START_rec_msg DB 'WE RECEIVED: "', '$'
-    ;END_rec_msg   DB '"', 0AH, 0DH, '$'
     CURSER_ROW_REC DB 16
     CURSER_COL_REC DB 1
-    ;COMPLETED DB 0
     RECEIVE_MSG db  15, ?, 15 dup('$'), 0AH, 0DH,'$'
     REASSIGN_VAR db 24h
 ;   ========== VARS TO CONTROLL COLLESION ==========
@@ -34,26 +30,26 @@
     TO_CONCATINATE_STRINGS DB ' : $'
     SWITCH_BETWEEN_PLAYERS DB 'To switch the chat with the other player Press enter then F5, ESC => end chat','$'
 ;   ========== VARS TO CONTROL MOVEMENT ==========
-    OLD_TIME DB 0                               ; old time
-    BALL_ORIGINAL_X DW 140h                     ; X-position of the point of the center 
-    BALL_ORIGINAL_Y DW 0c0h                     ; Y-position of the point of the center 
+    OLD_TIME DB 0                                           ; old time
+    BALL_ORIGINAL_X DW 140h                                 ; X-position of the point of the center 
+    BALL_ORIGINAL_Y DW 0c0h                                 ; Y-position of the point of the center 
 ;   ========== VARS TO DROW BALL ==========
-    BALL_X DW 140h                               ; "BALL" X position (cloumn)
-    BALL_Y DW 0c0h                               ; "BALL" y position (row - line)
-    BALL_SIZE DW 8h                              ; SIze of the ball 4-x 4-y
+    BALL_X DW 140h                                          ; "BALL" X position (cloumn)
+    BALL_Y DW 0c0h                                          ; "BALL" y position (row - line)
+    BALL_SIZE DW 8h                                         ; SIze of the ball 4-x 4-y
     BALL_VELOCITY_X_ARR DW 05h,04h,03h,04h,02h,05h,03h      ; velocity values in x direction for level 1 
     BALL_VELOCITY_X_ARR_2 DW 07h,03h,05h,04h,06h,02h,06h    ; velocity values in x direction for level 2
     BALL_VELOCITY_X DW 05h                                  ; current ball velocity in x direction
     BALL_VELOCITY_Y_ARR DW 02h,04h,05h,03h,05h,03h,04h      ; velocity values in y direction for level 1
     BALL_VELOCITY_Y_ARR_2 DW 02h,06h,05h,06h,03h,07h,04h    ; velocity values in y direction for level 2
     BALL_VELOCITY_Y DW 02h                                  ; current ball velocity in y direction
-    BALL_VELOCITY_CURRENT DW 0                                  ; index of the current velocity to loop the arrays
+    BALL_VELOCITY_CURRENT DW 0                              ; index of the current velocity to loop the arrays
     BALL_VELOCITY_TOT DB 0  
 ;   ========== VARS TO DROW LEFT_PADDELS ==========
-    PADDLE_LEFT_X dw 0Ah                        ; "LEFT-PADDLE" X position (cloumn)
-    PADDLE_LEFT_Y DW 0Ah                        ; "LEFT-PADDLE" y position (row - line)
+    PADDLE_LEFT_X dw 0Ah                                    ; "LEFT-PADDLE" X position (cloumn)
+    PADDLE_LEFT_Y DW 0Ah                                    ; "LEFT-PADDLE" y position (row - line)
 ;   ========== VARS TO DROW RIGHT_PADDELS ==========
-    PADDLE_RIGHT_X dw 624                       ; "RIGHT-PADDLE" X position (cloumn)
+    PADDLE_RIGHT_X dw 624                                   ; "RIGHT-PADDLE" X position (cloumn)
     PADDLE_RIGHT_Y DW 0Ah                       ; "RIGHT-PADDLE" y position (row - line)
 ;   ========== PADDELS SIZE ==========
     PADDLE_WIDTH dw 05h                         ;  PADDLE Width  (how many columns)
@@ -119,16 +115,16 @@
         mov ax,@data
         mov ds, ax
 	
-	call USER_NAME_PLAYER1
+	    call USER_NAME_PLAYER1
         call USER_NAME_PLAYER2
 START_GAME: 
-         mov LEFT_PLAYER_SCORE, 30h
-         mov RIGHT_PLAYER_SCORE, 30h 
-         call MAIN_MENU	
+        mov LEFT_PLAYER_SCORE, 30h
+        mov RIGHT_PLAYER_SCORE, 30h 
+        call MAIN_MENU	
 CHECK_AGAIN_ON_KEYPRESSED:
         mov ah,00h                             ; get keypress from user
         int 16h
-        cmp ah, 03Bh                          ; Check if F1 was pressed (Scan code of F1 = 3B )
+        cmp ah, 03Bh                            ; Check if F1 was pressed (Scan code of F1 = 3B )
         JZ CHATTING_MODE 
         cmp ah, 03Ch                           ; Check if F2 was pressed (Scan code of F2 = 3C )
         JZ GAME_MODE 
@@ -388,8 +384,8 @@ USER_NAME_PLAYER2 ENDP
         mov ax, WINDOW_HEIGHT                   ; Window height
         sub ax, BALL_SIZE                       ; size of the ball
         sub ax, WINDOW_BOUNDS                   ; lower boundry
-        cmp BALL_Y, ax                           ; compare Y-position(ball) ~ [Window height - size of the ball - lower boundry]
-        JG  far ptr NEG_VELOCITY_Y_TEMP_TRANS                 ; IF (Greater) {THEN Collesion with lower Boundry;} ELSE {continue;}
+        cmp BALL_Y, ax                          ; compare Y-position(ball) ~ [Window height - size of the ball - lower boundry]
+        JG  far ptr NEG_VELOCITY_Y_TEMP_TRANS   ; IF (Greater) {THEN Collesion with lower Boundry;} ELSE {continue;}
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
         jmp NEXT
         NEG_VELOCITY_Y_TEMP_TRANS:
@@ -1289,8 +1285,8 @@ GAME_OVER PROC NEAR
     mov bh, 0                        ;page number=always zero
     mov bl, 0Fh                      ;color of the text (white foreground 1111 and black background 0000 )
     mov cx, STR_LENGTH               ;length of string
-    mov dl, 12                       ;Column 0 > 39
-    mov dh, 12                       ;Row    0 > 24
+    mov dl, 33                       ;Column 0:80
+    mov dh, 12                       ;Row    0:25
     mov bp, offset msg               ;mov bp the offset of the string
     int 10h
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1309,8 +1305,8 @@ TRANSITION PROC NEAR
     mov bh, 0                        ;page number=always zero
     mov bl, 0Fh                      ;color of the text (white foreground 1111 and black background 0000 )
     mov cx, trans_msg_LENGTH         ;length of string
-    mov dl, 38                       ;Column 0 > 39
-    mov dh, 15                       ;Row    0 > 24
+    mov dl, 36                       ;Column 0 > 80
+    mov dh, 15                       ;Row    0 > 25
     mov bp, offset trans_msg_level         ;mov bp the offset of the string
     int 10h
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
