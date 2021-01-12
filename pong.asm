@@ -1002,7 +1002,14 @@ IN_GAME_CHAT_LEFT_PLAYER:
          int 21h
 
          mov FLAG_lEFT_PLAYER_MESSAGE, 01H   
+         jmp DUMMY_JUMP
 
+;transition jump because jump out of range
+TRANSITION_BETWEEN_PLAYERS3:
+         cmp ah, 03FH                      ; IF user pressed ESC close in game chat
+         JE IN_GAME_CHAT_LEFT_PLAYER
+         
+DUMMY_JUMP:
 ; ESC => to end chat, F5 => to switch between users
 WAIT_USER_INPUT_LEFT:
          mov ah, 00H
@@ -1019,12 +1026,12 @@ IN_GAME_CHAT_RIGTH_PLAYER:
          call DRAW_PADDLES   
          call DRAW_BALL
          call DRAW_SCORE   
-         ;jmp SKIP_THIS_PART
+         jmp SKIP_THIS_PART
 
          ;transition jump because jump out of range
 TRANSITION_BETWEEN_PLAYERS:
          cmp ah, 03FH                      ; IF user pressed ESC close in game chat
-         JE IN_GAME_CHAT_LEFT_PLAYER
+         JE TRANSITION_BETWEEN_PLAYERS3
 
 SKIP_THIS_PART:
         ; This piece of code is just to clear the row 
