@@ -81,8 +81,8 @@
 ;   ========== Player user name ==========
     WLCOME_MSG_PLAYER1 db  'Please Enter your Name:', 10, 9, 9, 9, 9, '$'
     WLCOME_MSG_PLAYER2 db  'Please Enter your Name:', 10, 9, 9, 9, 9, '$'
-    MY_USER_NAME_PLAYER1       db  15, ?, 15 dup('$')
-    MY_USER_NAME_PLAYER2       db  15, ?, 15 dup('$')
+    MY_USER_NAME_PLAYER1       db  15, ?, 15 dup('$'), '$'
+    MY_USER_NAME_PLAYER2       db  15, ?, 15 dup('$'), '$'
     WLCOME_MSG_LENGTH  EQU 28
     LAST_MSG           db  'Please Press any key to continue', '$'
     ERROR_NAME_MSG     db  10, 9, 'Your name should start with a letter, Please enter it again: ','$'
@@ -1440,8 +1440,6 @@ PORT_INTIALIZATION endp
 ;====================================================== SEND STRING =========================================================
 SEND_STRING PROC NEAR
 
-        call BOTTOM_CHAT
-
         mov ah, 01h                                 ; Get Keyboard Status
         int 16h                                     ; Excute according to the above configurations "ah" - DON'T WAIT
         JZ EXIT_PROC_SEND                           ; ZF = 0 if a key pressed
@@ -1686,6 +1684,7 @@ CHAT_MODE PROC NEAR
 	int 21h
 
     CHK:
+        call BOTTOM_CHAT
         mov ah,01h                          ; get keypress from user to check if user pressed F4
         int 16h
         cmp ah, 61

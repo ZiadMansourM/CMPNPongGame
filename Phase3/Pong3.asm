@@ -9,11 +9,16 @@
     DONE_SENDING DB 0AH, 0DH, '$'
     CURSER_ROW DB 1
     CURSER_COL DB 1
+    END_CHAT_MESSAGE_PART1 DB '-To end chatting with $'
+    LENGTH_END_CHAT_MESSAGE EQU 22
+    END_CHAT_MESSAGE_PART2 DB 'Press F3$'
 ;DASHED_LINE db '--------------------------------------------------------------------------------','$'
 ; TO RECEIVE
     CURSER_ROW_REC DB 16
     CURSER_COL_REC DB 1
     RECEIVE_MSG db  15, ?, 15 dup('$'), 0AH, 0DH,'$'
+    PREPARE_RECEIVE_MSG db  'PLAYER: ', '$'
+    PREPARE_SEND_MSG db  15 dup('$'), '$'
     REASSIGN_VAR db 24h
 ;   ========== VARS TO CONTROLL COLLESION ==========
     WINDOW_WIDTH dw 280h                        ; 320 Pixels 640
@@ -75,7 +80,7 @@
     LEVEL db 00h 
 ;   ========== Player user name ==========
     WLCOME_MSG_PLAYER1 db  'Please Enter your Name:', 10, 9, 9, 9, 9, '$'
-    WLCOME_MSG_PLAYER2 db  'Please Enter your Name:', 10, 9, 9, 9, 9, '$'
+    WLCOME_MSG_PLAYER2  db  'Please Enter your Name:', 10, 9, 9, 9, 9, '$'
     MY_USER_NAME_PLAYER1       db  15, ?, 15 dup('$'), '$'
     MY_USER_NAME_PLAYER2       db  15, ?, 15 dup('$'), '$'
     WLCOME_MSG_LENGTH  EQU 28
@@ -116,37 +121,35 @@
         mov ds, ax
 	
 	    call USER_NAME_PLAYER1
-        ; send your name to the oppenent player
-        ;   sending the TRANS_MSG
+        ;call USER_NAME_PLAYER2
+    ;   sending the TRANS_MSG
         mov ch, 00h
         mov cl, MY_USER_NAME_PLAYER1[1]
-        ; INC cl
         mov DI, offset MY_USER_NAME_PLAYER1+2
         ;[1]: check that the transmitter holding register is empty
-        AGAIN_SEND_NAME1:
+        CHK_SEND_AGAIN:
             mov dx, 3fdh    ; line status register
             in al, dx       ; read line status register
             test al, 00100000b
-            JZ AGAIN_SEND_NAME1        ; transmitter holding register NOT EMPTY
+            JZ CHK_SEND_AGAIN        ; transmitter holding register NOT EMPTY
         ;   transmitter holding register IS EMPTY
             mov dx, 3f8h    ; trasmit data register
             mov al, [DI]    ; send key Byte to the other PC
             out dx, al      ; EXCUTE
         ;   prepare to send next byte
             INC DI
-        loop AGAIN_SEND_NAME1
+        loop CHK_SEND_AGAIN
         
-        AGAIN_Last_SEND_FLAG:
+        AGAIN_Last_SEND:
             mov dx, 3fdh    ; line status register
             in al, dx       ; read line status register
             test al, 00100000b
-            JZ AGAIN_Last_SEND_FLAG        ; transmitter holding register NOT EMPTY
+            JZ AGAIN_Last_SEND        ; transmitter holding register NOT EMPTY
         ;   transmitter holding register IS EMPTY
             mov dx, 3f8h    ; trasmit data register
             mov al, 24h     ; send key Byte to the other PC
             out dx, al      ; EXCUTE
-        ; call USER_NAME_PLAYER2
-DEST_START_GAME: 
+START_GAME: 
         mov LEFT_PLAYER_SCORE, 30h
         mov RIGHT_PLAYER_SCORE, 30h 
         call MAIN_MENU	
@@ -154,33 +157,32 @@ CHECK_AGAIN_ON_KEYPRESSED:
         mov ah,00h                             ; get keypress from user
         int 16h
         cmp ah, 03Bh                            ; Check if F1 was pressed (Scan code of F1 = 3B )
-        ; WAIT FOR RESPONSE
+    ; ;   RECEIVE
+    ;     CHK_RECEIVE_MSG:
+    ;     mov dx, 3fdh            ; line status register
+    ;     in al, dx               ; read line status register
+    ;     test al, 1b
+    ;     JZ CHK_RECEIVE_MSG    ; not ready "received nothing"
+
+    ;     mov DI, offset RECEIVE_MSG+2
+    ;     RECEIVE_AGAIN:
+    ;     mov dx, 3f8h            ; receive data register
+    ;     in al, dx
+    ;     cmp al, 24h
+    ;     JZ FINISHED
+    ;     mov [DI], al            ; STORE WHAT YOU RECEIVED
+    ;     INC DI
+    ;     ; check if something else have been received
+    ;     CHK_AGAIN_RECEIVE:
+    ;     mov dx, 3fdh            ; line status register
+    ;     in al, dx               ; read line status register
+    ;     test al, 1b
+    ;     JNZ RECEIVE_AGAIN       ; "received something"
+    ;     jZ CHK_AGAIN_RECEIVE
+    ;     FINISHED:
+    ; ;   END RECEIVE
         JZ CHATTING_MODE 
         cmp ah, 03Ch                           ; Check if F2 was pressed (Scan code of F2 = 3C )
-        ; WAIT FOR RESPONSE TODO:
-        CHK_LINE_STATUS:
-        mov dx, 3fdh            ; line status register
-        in al, dx               ; read line status register
-        test al, 1b
-        JZ CHK_LINE_STATUS      ; not ready "received nothing"
-
-        mov DI, offset MY_USER_NAME_PLAYER2+2
-        RECEIVE_NAME:
-        mov dx, 3f8h            ; receive data register
-        in al, dx
-        cmp al, 24h
-        JZ FINISHED
-        mov [DI], al            ; STORE WHAT YOU RECEIVED
-        mov LEFT_PLAYER_SCORE, al
-        INC DI
-        ; check if something else have been received
-        CHK_AGAIN_TO_REC_NAME:
-        mov dx, 3fdh            ; line status register
-        in al, dx               ; read line status register
-        test al, 1b
-        JNZ RECEIVE_NAME        ; "received something"
-        jZ CHK_AGAIN_TO_REC_NAME
-        FINISHED:
         JZ GAME_MODE 
         cmp ah, 01h                            ; Check if ESC was pressed (Scan code of ESC = 01 )
         JZ EXIT2 
@@ -192,37 +194,11 @@ CHECK_AGAIN_ON_KEYPRESSED:
 		 int 21h
 
 CHATTING_MODE:
-     call CHAT_MODE
-     jmp CHECK_AGAIN_ON_KEYPRESSED
-
-jmp GAME_MODE
-START_GAME:
-jmp DEST_START_GAME
-
+    call CHAT_MODE
+    jmp START_GAME
 
 GAME_MODE:
         call CLEAR_SCREEN
-
-        ; mov MY_USER_NAME_PLAYER2[2], 61h
-        ; mov MY_USER_NAME_PLAYER2[3], 24h
-        ; mov MY_USER_NAME_PLAYER2[1], 3h
-        add MY_USER_NAME_PLAYER2+1, 30h
-        DISP_PLAYER_2:
-        ;DEBUG
-        mov si, @data                    ;moves to si the location in memory of the data segment
-        mov es, si                       ;moves to es the location in memory of the data segment
-        mov ah, 13h                      ;service to print string in graphic mode
-        mov al, 0                        ;sub-service 0 all the characters will be in the same color(bl) and cursor position is not updated after the string is written
-        mov bh, 0                        ;page number=always zero
-        mov bl, 0Ah                      ;color of the text (white foreground 1111 and black background 0000 )
-        mov ch, 00h
-        mov cl, 4   ;length of string
-        mov dl, 38                       ;Column 0 > 40
-        mov dh, 2                        ;Row    0 > 25
-        mov bp, offset MY_USER_NAME_PLAYER2+1 ;mov bp the offset of the string
-        int 10h
-        jmp $
-        ;END DEBUG
 
         CHECK_TIME:
 ;           get system time, more information @"http://spike.scu.edu.au/~barry/interrupts.html#ah2c"
@@ -1514,9 +1490,12 @@ PORT_INTIALIZATION endp
 
 ;====================================================== SEND STRING =========================================================
 SEND_STRING PROC NEAR
-        mov ah, 01h                                 ; Get Keyboard Status
-        int 16h                                     ; Excute according to the above configurations "ah" - DON'T WAIT
-        JZ EXIT_PROC_SEND                           ; ZF = 0 if a key pressed
+
+        call BOTTOM_CHAT
+
+        ; mov ah, 01h                                 ; Get Keyboard Status
+        ; int 16h                                     ; Excute according to the above configurations "ah" - DON'T WAIT
+        ; JZ EXIT_PROC_SEND_TEMP                           ; ZF = 0 if a key pressed
         
         CMP CURSER_ROW, 14
         JNZ continue_sending
@@ -1536,17 +1515,41 @@ SEND_STRING PROC NEAR
         CMP CURSER_ROW, 14
         JZ skip
         add CURSER_ROW, 1
+        jmp skip
+        EXIT_PROC_SEND_TEMP:
+        jmp EXIT_PROC_SEND
         skip:
         int 10h
 
-        ; by millania
-        mov ah, 01h 
-        int 16h 
-        cmp ah, 28 
-        JNE DUMMY_JUMP2 
-        mov ah, 00h
-        int 16h 
-        DUMMY_JUMP2:
+        ; ; by millania
+        ; mov ah, 01h 
+        ; int 16h 
+        ; cmp ah, 28 
+        ; JNE DUMMY_JUMP2 
+        ; mov ah, 00h
+        ; int 16h 
+        ; DUMMY_JUMP2:
+
+
+        
+
+        ; Prepare send Message
+        mov ch, 00h
+        mov cl, MY_USER_NAME_PLAYER1+1                               ; the number of possible values for velocity
+        mov di,offset PREPARE_SEND_MSG       ; the old array to change valuues
+        mov si,offset MY_USER_NAME_PLAYER1+2     ; the array to copy values from
+        REP MOVSB
+        mov bh, 00h
+        mov bl, MY_USER_NAME_PLAYER1+1
+        inc bl
+        mov PREPARE_SEND_MSG[bx], 3Ah
+        inc bl
+        mov PREPARE_SEND_MSG[bx], 20H
+        ; end prepare send message
+
+        mov ah, 09
+        mov dx, offset PREPARE_SEND_MSG
+        int 21h
 
         mov ah, 0Ah                     ; get input from user "WAIT:"
         mov dx, offset TRANS_MSG
@@ -1589,6 +1592,51 @@ SEND_STRING PROC NEAR
     ret
 SEND_STRING ENDP
 
+BOTTOM_CHAT PROC NEAR
+; PRINTS A DASHED LINE AND THIS MESSAGE 'To end chatting with "player name" press F3'
+;Set cursor position to row 24 and column 0 and print a dashed line
+	     mov ah, 02h
+	     mov dh, STATUS_BAR_START_ROW_LOWER_PART                  	; row 28
+	     mov dl, 0                                               	; column 0
+	     int 10h
+         mov ah, 09h                        ; print dashed line
+	     mov dx, offset DASHED_LINE 
+	     int 21h 
+;Print end game message 
+         mov ah, 09h                        ; print this message => To end the chatting with
+	     mov dx, offset END_CHAT_MESSAGE_PART1 
+	     int 21h 
+
+         mov ah, 09h                        ; print the player's name 
+	     mov dx, offset MY_USER_NAME_PLAYER1[2] 
+	     int 21h
+         
+;Count the length of the left player username to set the cursor position after it
+                     mov SI, offset MY_USER_NAME_PLAYER1[2]
+                     mov ch, 0h
+    STRING3_NOT_ENDED10:
+                     cmp byte PTR [SI], 24h
+					 JE DONE_COUNTING7 
+					 INC ch
+					 INC SI 
+					 jmp STRING3_NOT_ENDED10
+    DONE_COUNTING7:
+                     ;add ch, 30h 
+					 ;sub ch, 1h
+                     add ch, dummy_variable_to_count_strings_length
+
+         mov dl, LENGTH_END_CHAT_MESSAGE    ; column after the name and first message length
+         add dl, ch
+         mov ah, 02h                        ; Set cursor position
+         mov dh, STATUS_BAR_START_ROW_LOWER_PART
+	     add dh, 1                       	; row 28                	
+	     int 10h
+         mov ah, 09h                        ; print this message => Press F3
+	     mov dx, offset END_CHAT_MESSAGE_PART2 
+	     int 21h
+
+    ret
+BOTTOM_CHAT ENDP
 ;====================================================== SEND STRING =========================================================
 ;   This procedure helps in creating the Illosion of movement by clearing the screen 
 ;CLEAR_SCREEN PROC NEAR
@@ -1641,14 +1689,14 @@ RECEIVE_BYTE PROC NEAR
         jZ CHK_AGAIN
 
         DISP:
-        CMP CURSER_ROW_REC, 24
+        CMP CURSER_ROW_REC, 27
         JNZ continue_REC
         mov ah, 6	; function 6 Scroll Window Up
         mov al, 1	; scroll by 1 line
         mov bh, 0	; normal video attrbute
-        mov ch, 16   ; upper left Y
+        mov ch, 16  ; upper left Y
         mov cl, 0	; upper left X
-        mov dh, 24	; lower right Y
+        mov dh, 27	; lower right Y
         mov dl, 79	; lower right x
         int 10h
         continue_REC:
@@ -1656,12 +1704,23 @@ RECEIVE_BYTE PROC NEAR
         mov ah, 02h                     ; int 10h on ah = 02h => Set cursor position
         mov dh, CURSER_ROW_REC            	; row 1
         mov dl, CURSER_COL_REC         	    ; column 25
-        CMP CURSER_ROW_REC, 24
+        CMP CURSER_ROW_REC, 27
         JZ skip_REC
         add CURSER_ROW_REC, 1
         skip_REC:
         int 10h
+
+
+        ; mov ah, 02h                     ; int 10h on ah = 02h => Set cursor position
+        ; mov dh, CURSER_ROW_REC          ; row 9
+        ; mov dl, CURSER_COL_REC        	; column 25
+        ; add CURSER_ROW_REC, 1
+        ; int 10h                         ; set curser position
         
+        mov ah, 09
+        mov dx, offset MY_USER_NAME_PLAYER2+2
+        int 21h
+
         mov ah, 09
         mov dx, offset RECEIVE_MSG+2
         int 21h
