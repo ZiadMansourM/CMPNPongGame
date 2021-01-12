@@ -854,40 +854,40 @@ DRAW_SCORE ENDP
 
 ;========================================================================= STATUS BAR PROCEDURE =========================================================================
 STATUS_BAR PROC NEAR 
-;Set cursor position to row 15 and column 0 and print a dashed line 
+;Set cursor position to row 22 and column 0 and print a dashed line 
 	     mov ah, 02h
-	     mov dh, STATUS_BAR_START_ROW_UPPER_PART     	; row 15
-	     mov dl, 0                        	; column 0
+	     mov dh, STATUS_BAR_START_ROW_UPPER_PART     	; row 22
+	     mov dl, 0                                  	; column 0
 	     int 10h
-         mov ah, 09h                        ; print dashed line
+         mov ah, 09h                                    ; print dashed line
 	     mov dx, offset DASHED_LINE 
 	     int 21h 
 ; ========== Player 1 score ==========
-;Set cursor position to row 11 and column 0 and print the score of the players
+;Set cursor position to row 23 and column 0 and print the score of the players
          mov ah, 02h
          mov al, STATUS_BAR_START_ROW_UPPER_PART
          add al, 1
-	     mov dh, al                       	; row 16
+	     mov dh, al                       	; row 23
 	     mov dl, 0                        	; column 0
 	     int 10h
          mov ah, 09h                        ; print player's user name
 	     mov dx, offset MY_USER_NAME_PLAYER1[2] 
 	     int 21h 
 ;Count the length of the left player username  to set the cursor position after it
-                     mov SI, offset MY_USER_NAME_PLAYER1[2]
-                     mov ch, 0h
+                     mov SI, offset MY_USER_NAME_PLAYER1[2]        ; move memory location of user name player to SI
+                     mov ch, 0h                                    ; prepare counter 
     STRING1_NOT_ENDED:
-                     cmp byte PTR [SI], 24h
-					 JE DONE_COUNTING1 
-					 INC ch
-					 INC SI 
-					 jmp STRING1_NOT_ENDED
+                     cmp byte PTR [SI], 24h                        ; compare current character with $ (end of string)
+					 JE DONE_COUNTING1                             ; if equal => exit the loop
+					 INC ch                                        ; increment counter
+					 INC SI                                        ; increment SI (to ge tnext memory location)
+					 jmp STRING1_NOT_ENDED                         ; continue looping
     DONE_COUNTING1:
                      ;add ch, 30h 
 					 sub ch, 1h
 
          mov ah, 02h                         ; Set cursor position
-	     mov dh, al                          ; row 16
+	     mov dh, al                          ; row 23
 	     mov dl, ch                          ; column after the name's length
 	     int 10h
          mov ah, 09h                        ; print this message => 's score: 
@@ -895,47 +895,47 @@ STATUS_BAR PROC NEAR
 	     int 21h 
 ; display score of left player 
          mov ah, 02h                         ; print player's score
-         mov dl, LEFT_PLAYER_SCORE          ; character t be printed
+         mov dl, LEFT_PLAYER_SCORE           ; character t be printed
          int 21h
 ; ========== player 2 score ==========
 ;Count the length of the left player username to set the cursor position after it
-                     mov SI, offset MY_USER_NAME_PLAYER2[2]
-                     mov ch, 0h
+                     mov SI, offset MY_USER_NAME_PLAYER2[2]       ; move memory location of user name player to SI
+                     mov ch, 0h                                   ; prepare counter 
     STRING4_NOT_ENDED:
-                     cmp byte PTR [SI], 24h
-					 JE DONE_COUNTING4 
-					 INC ch
-					 INC SI 
-					 jmp STRING4_NOT_ENDED
+                     cmp byte PTR [SI], 24h                       ; compare current character with $ (end of string)
+					 JE DONE_COUNTING4                            ; if equal => exit the loop
+					 INC ch                                       ; increment counter
+					 INC SI                                       ; increment SI (to ge tnext memory location)
+					 jmp STRING4_NOT_ENDED                        ; continue looping
     DONE_COUNTING4:
-                     mov dummy_variable_to_count_strings_length, ch 
+                     mov dummy_variable_to_count_strings_length, ch       ; store counter in a dummy variable
 ;Count the length of "'s score: " message to set the cursor position after it
-                     mov SI, offset MSG_TO_DISPLAY_SCORE__IN_GAME_MODE
-                     mov ch, 0h
+                     mov SI, offset MSG_TO_DISPLAY_SCORE__IN_GAME_MODE       ; move memory location of user name player to SI
+                     mov ch, 0h                                              ; prepare counter
     STRING5_NOT_ENDED:
-                     cmp byte PTR [SI], 24h
-					 JE DONE_COUNTING5 
-					 INC ch
-					 INC SI 
-					 jmp STRING5_NOT_ENDED
+                     cmp byte PTR [SI], 24h                       ; compare current character with $ (end of string)
+					 JE DONE_COUNTING5                            ; if equal => exit the loop
+					 INC ch                                       ; increment counter
+					 INC SI                                       ; increment SI (to ge tnext memory location)
+					 jmp STRING5_NOT_ENDED                        ; continue looping
     DONE_COUNTING5:
                      add ch, dummy_variable_to_count_strings_length
                      add ch, 2                ; to leave space for the score                   
-;Set cursor position to row 11 and column 0 and print the score of the players
+;Set cursor position to row 23 and column 0 and print the score of the players
          mov ah, 02h
          mov al, STATUS_BAR_START_ROW_UPPER_PART
          add al, 1
          mov cl, 80                         ; number of columns
-         sub cl, ch
-	     mov dh, al                       	; row 16
-	     mov dl, cl                        	; column 0
+         sub cl, ch                         ; To get the starting column (Print the score from the right)
+	     mov dh, al                       	; row 23
+	     mov dl, cl                        	; calculated column number
 	     int 10h
          mov ah, 09h                        ; print player's user name
 	     mov dx, offset MY_USER_NAME_PLAYER2[2] 
 	     int 21h 
 
          mov ah, 02h                         ; Set cursor position
-	     mov dh, al                          ; row 16
+	     mov dh, al                          ; row 23
          add cl, dummy_variable_to_count_strings_length
 	     mov dl, cl                          ; column after the name's length
 	     int 10h
@@ -946,7 +946,7 @@ STATUS_BAR PROC NEAR
          mov ah, 02h                         ; print player's score
          mov dl, RIGHT_PLAYER_SCORE          ; character t be printed
          int 21h
-;Set cursor position to row 17 and column 0 and print a dashed line
+;Set cursor position to row 24 and column 0 and print a dashed line
 	     mov ah, 02h
          mov al, STATUS_BAR_START_ROW_UPPER_PART
          add al, 2
@@ -960,34 +960,35 @@ STATUS_BAR PROC NEAR
 ; ===================== In game chat  =====================
          mov ah,01h                          ; Check keyboard buffer has keypressed or not
          int 16h                             ; ZF = 1 => keystroke not available, ZF = 0 => keystroke available
-    ;   Check if player inserted a string
+;   Check if player inserted a string
          cmp al,50h
          JE PRINT_DASHED_LINE_FIRST                     ; CHECK if P was pressed
          cmp al,70h
          JE PRINT_DASHED_LINE_FIRST                     ; CHECK if p was pressed
-         JMP EXIT_IN_CHAT_GAME
+         JMP EXIT_IN_CHAT_GAME                          ; P not pressed => skip in game chat part
 PRINT_DASHED_LINE_FIRST:
 ; Consume the character in keyboard buffer
          mov ah,07h
          int 21h
-;Set cursor position to row 24 and column 0 and print a dashed line
+;Set cursor position to row 28 and column 0 and print a dashed line
 	     mov ah, 02h
-	     mov dh, STATUS_BAR_START_ROW_LOWER_PART                  	; row 27
+	     mov dh, STATUS_BAR_START_ROW_LOWER_PART                  	; row 28
 	     mov dl, 0                                               	; column 0
 	     int 10h
-         mov ah, 09h                        ; print dashed line
-	     mov dx, offset DASHED_LINE 
+         mov ah, 09h                                                ; print dashed line
+	     mov dx, offset DASHED_LINE  
 	     int 21h 
 ;Print end game message 
-         mov ah, 09h                        ; print this message => To end the game with
+         mov ah, 09h                                                ; print this message => To end the game with
 	     mov dx, offset SWITCH_BETWEEN_PLAYERS 
 	     int 21h 
 
+; draw paddles and ball to stop the game
 IN_GAME_CHAT_LEFT_PLAYER:
          call DRAW_PADDLES     
          call DRAW_BALL
          call DRAW_SCORE 
-; This piece of code is just to clear the row 
+; This piece of code is just to clear the row for multiple usage (print a character multiple times in black color) 
          mov ah, 02h
          mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 25                       	
 	     mov dl, 0                                   ; column 0
@@ -997,7 +998,7 @@ IN_GAME_CHAT_LEFT_PLAYER:
          mov bl, 00H 
          mov cx, 40
          int 10h
-
+;Set cursor position to row 25 and column 0 and print player name
          mov ah, 02h
          mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 25                       	
 	     mov dl, 0                                   ; column 0
@@ -1005,25 +1006,26 @@ IN_GAME_CHAT_LEFT_PLAYER:
          mov ah, 09h                                 ; print left player's user name
 	     mov dx, offset MY_USER_NAME_PLAYER1[2] 
 	     int 21h
+;Set cursor position to row 25 and set the column after the player's name and print a colon
          mov ah, 02h
-         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 16  
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 25  
          mov dl, MY_USER_NAME_PLAYER1[1]
 	     int 10h
          mov ah, 09h                                 ; print ':'
 	     mov dx, offset TO_CONCATINATE_STRINGS 
 	     int 21h
-
+;Set cursor position to row 25 and set the column after the player's name and get user input
          mov ah, 02h
          mov dh, STATUS_BAR_START_ROW_MIDDLE_PART      
          mov dl, MY_USER_NAME_PLAYER1[1]
-	     add dl, 3
+	     add dl, 3                        ; leave space to print this ' : '
 	     int 10h
          mov ah, 0Ah                      ; get input from user
 	     mov dx, offset LEFT_PLAYER_INGAME_MESSAGE
          int 21h
 
          mov FLAG_lEFT_PLAYER_MESSAGE, 01H   
-         jmp DUMMY_JUMP
+         jmp DUMMY_JUMP                   ; just to skip the following 2 lines
 
 ;transition jump because jump out of range
 TRANSITION_BETWEEN_PLAYERS3:
@@ -1035,30 +1037,32 @@ DUMMY_JUMP:
 WAIT_USER_INPUT_LEFT:
          mov ah, 00H
          int 16h 
-         cmp ah, 01H                      ; IF user pressed F5 switch between players
+         cmp ah, 01H                      ; IF user pressed ESC end in chat game
          JE TRANSITION_BETWEEN_PLAYERS2
-         cmp ah, 03FH 
+         cmp ah, 03FH                     ; IF user pressed F5 switch between players
          JE IN_GAME_CHAT_RIGTH_PLAYER
          mov ah, 00h
          int 16h
-         JMP WAIT_USER_INPUT_LEFT
+         JMP WAIT_USER_INPUT_LEFT         ; else what fro the user to input F5 or ESC
 
+
+; draw paddles and ball to stop the game
 IN_GAME_CHAT_RIGTH_PLAYER:
          call DRAW_PADDLES   
          call DRAW_BALL
          call DRAW_SCORE   
-         jmp SKIP_THIS_PART
+         jmp SKIP_THIS_PART              ; just to skip the following 2 lines
 
          ;transition jump because jump out of range
 TRANSITION_BETWEEN_PLAYERS:
-         cmp ah, 03FH                      ; IF user pressed ESC close in game chat
+         cmp ah, 03FH                      ; IF user pressed F5 switch between players
          JE TRANSITION_BETWEEN_PLAYERS3
 
 SKIP_THIS_PART:
-        ; This piece of code is just to clear the row 
+; This piece of code is just to clear the row for multiple usage (print a character multiple times in black color) 
          mov ah, 02h
-         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 25    
-         add dh, 2                   	
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART        
+         add dh, 2                   	             ; row 27
 	     mov dl, 0                                   ; column 0
 	     int 10h
          mov ah, 09h
@@ -1070,32 +1074,34 @@ SKIP_THIS_PART:
 
 ;transition jump because jump out of range
 TRANSITION_BETWEEN_PLAYERS2:
-         cmp ah, 01H                      ; IF user pressed F5 switch between players
+         cmp ah, 01H                      ; IF user pressed ESC end in chat game
          JE EXIT_IN_CHAT_GAME
 
 PLAYER2:
+;Set cursor position to row 27 and column 0 and print player name
          mov ah, 02h
-         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 25  
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 27  
          add dh, 2                    	
 	     mov dl, 0                                   ; column 0
 	     int 10h
          mov ah, 09h                                 ; print left player's user name
 	     mov dx, offset MY_USER_NAME_PLAYER2[2] 
 	     int 21h
+;Set cursor position to row 27 and set the column after the player's name and print a colon
          mov ah, 02h
-         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 16  
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 27  
          add dh, 2
          mov dl, MY_USER_NAME_PLAYER2[1]
 	     int 10h
          mov ah, 09h                                 ; print ':'
 	     mov dx, offset TO_CONCATINATE_STRINGS 
 	     int 21h
-
+;Set cursor position to row 27 and set the column after the player's name and get user input
          mov ah, 02h
          mov dh, STATUS_BAR_START_ROW_MIDDLE_PART      
          add dh, 2
          mov dl, MY_USER_NAME_PLAYER2[1]
-	     add dl, 3
+	     add dl, 3                        ; leave space to print this ' : '
 	     int 10h
          mov ah, 0Ah                      ; get input from user
 	     mov dx, offset RIGHT_PLAYER_INGAME_MESSAGE
@@ -1120,6 +1126,7 @@ EXIT_IN_CHAT_GAME:
 ;Set cursor position to row 25 and column 0 and print the in-game chat of the players
          cmp FLAG_lEFT_PLAYER_MESSAGE, 00H 
          JE NO_CHAT_FOR_LEFT_PLAYER
+;Set cursor position to row 25 and column 0 and print  the player's name
          mov ah, 02h
          mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 25                       	
 	     mov dl, 0                                   ; column 0
@@ -1127,14 +1134,15 @@ EXIT_IN_CHAT_GAME:
          mov ah, 09h                                 ; print left player's user name
 	     mov dx, offset MY_USER_NAME_PLAYER1[2] 
 	     int 21h
+;Set cursor position to row 25 and set the column after the player's name and print a colon
          mov ah, 02h
-         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 16  
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 25  
          mov dl, MY_USER_NAME_PLAYER1[1]
 	     int 10h
          mov ah, 09h                                 ; print ':'
 	     mov dx, offset TO_CONCATINATE_STRINGS 
 	     int 21h
-
+;Set cursor position to row 25 and set the column after the player's name , a colon and print the left player message
          mov ah, 02h
          mov dh, STATUS_BAR_START_ROW_MIDDLE_PART      
          mov dl, MY_USER_NAME_PLAYER1[1]
@@ -1148,30 +1156,32 @@ EXIT_IN_CHAT_GAME:
          cmp FLAG_RIGHT_PLAYER_MESSAGE, 00H 
 NO_CHAT_FOR_LEFT_PLAYER:         
          JE NO_CHAT_YET
+;Set cursor position to row 27 and column 0 and print  the player's name
          mov ah, 02h
-         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 25   
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 27  
          add dh, 2                    	
 	     mov dl, 0                                   ; column 0
 	     int 10h
-         mov ah, 09h                                 ; print left player's user name
+         mov ah, 09h                                 ; print right player's user name
 	     mov dx, offset MY_USER_NAME_PLAYER2[2] 
 	     int 21h
+;Set cursor position to row 27 and set the column after the player's name and print a colon
          mov ah, 02h
-         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 16  
+         mov dh, STATUS_BAR_START_ROW_MIDDLE_PART    ; row 27  
          add dh, 2
          mov dl, MY_USER_NAME_PLAYER2[1]
 	     int 10h
          mov ah, 09h                                 ; print ':'
 	     mov dx, offset TO_CONCATINATE_STRINGS 
 	     int 21h
-
+;Set cursor position to row 25 and set the column after the player's name , a colon and print the right player message
          mov ah, 02h
          mov dh, STATUS_BAR_START_ROW_MIDDLE_PART  
          add dh, 2    
          mov dl, MY_USER_NAME_PLAYER2[1]
 	     add dl, 3
 	     int 10h
-         mov ah, 09h                                 ; print left player's message
+         mov ah, 09h                                 ; print right player's message
 	     mov dx, offset RIGHT_PLAYER_INGAME_MESSAGE[2] 
 	     int 21h 
 
@@ -1216,8 +1226,6 @@ NO_CHAT_YET:
 					 INC SI 
 					 jmp STRING3_NOT_ENDED
     DONE_COUNTING3:
-                     ;add ch, 30h 
-					 ;sub ch, 1h
                      add ch, dummy_variable_to_count_strings_length
 
          mov ah, 02h                        ; Set cursor position
@@ -1246,8 +1254,8 @@ MAIN_MENU PROC NEAR
 	mov ah, 09h
 	mov dx, offset start_chatting_msg
 	int 21h
-;Set cursor position to row 13 and column 25 and print offset message (start game)
-        mov ah, 02h
+;Set cursor position to row 11 and column 25 and print offset message (start game)
+    mov ah, 02h
 	mov cl,start_row
 	add cl,2
 	mov dh, cl                       	; row 11
@@ -1257,7 +1265,7 @@ MAIN_MENU PROC NEAR
 	mov dx, offset start_PongGame_msg
 	int 21h
 ;Set cursor position to row 11 and column 25 and print offset message (end program)
-        mov ah, 02h
+    mov ah, 02h
 	mov cl,start_row
 	add cl,4
 	mov dh, cl                       	; row 13
