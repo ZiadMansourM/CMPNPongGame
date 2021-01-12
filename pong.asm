@@ -1526,10 +1526,10 @@ SEND_STRING PROC NEAR
         EXIT_PROC_SEND:
     ret
 SEND_STRING ENDP
-
+;====================================================== BOTTOM CHAT PROCEDURE =========================================================
 BOTTOM_CHAT PROC NEAR
 ; PRINTS A DASHED LINE AND THIS MESSAGE 'To end chatting with "player name" press F3'
-;Set cursor position to row 24 and column 0 and print a dashed line
+;Set cursor position to row 28 and column 0 and print a dashed line
 	     mov ah, 02h
 	     mov dh, STATUS_BAR_START_ROW_LOWER_PART                  	; row 28
 	     mov dl, 0                                               	; column 0
@@ -1556,15 +1556,14 @@ BOTTOM_CHAT PROC NEAR
 					 INC SI 
 					 jmp STRING3_NOT_ENDED10
     DONE_COUNTING7:
-                     ;add ch, 30h 
-					 ;sub ch, 1h
                      add ch, dummy_variable_to_count_strings_length
 
+;Set cursor position to row 29 and column 0 and print a dashed line
          mov dl, LENGTH_END_CHAT_MESSAGE    ; column after the name and first message length
          add dl, ch
          mov ah, 02h                        ; Set cursor position
          mov dh, STATUS_BAR_START_ROW_LOWER_PART
-	     add dh, 1                       	; row 28                	
+	     add dh, 1                       	; row 29                	
 	     int 10h
          mov ah, 09h                        ; print this message => Press F3
 	     mov dx, offset END_CHAT_MESSAGE_PART2 
