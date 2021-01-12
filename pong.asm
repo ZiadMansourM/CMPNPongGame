@@ -2,9 +2,26 @@
 .model small 
 .stack 64
 .data
+;   ========== CHAT MODULE VARIABLES ==========
+    TRANS_MESSAGE DB '-This is the transmitter PC-', '$'
+    TRANS_MSG db  15, ?, 15 dup('$') 
+    ;PREPARE_FOR_SENDING DB 'SENDING: "', 0AH, 0DH, '$'
+    DONE_SENDING DB 0AH, 0DH, '$'
+    CURSER_ROW DB 1
+    CURSER_COL DB 1
+;DASHED_LINE db '--------------------------------------------------------------------------------','$'
+; TO RECEIVE
+    ;VALUE   DB ?
+    ;START_rec_msg DB 'WE RECEIVED: "', '$'
+    ;END_rec_msg   DB '"', 0AH, 0DH, '$'
+    CURSER_ROW_REC DB 16
+    CURSER_COL_REC DB 1
+    ;COMPLETED DB 0
+    RECEIVE_MSG db  15, ?, 15 dup('$'), 0AH, 0DH,'$'
+    REASSIGN_VAR db 24h
 ;   ========== VARS TO CONTROLL COLLESION ==========
     WINDOW_WIDTH dw 280h                        ; 320 Pixels 640
-    WINDOW_HEIGHT dw 165h                       ; 120 Pixels 480 => old value 180 <=
+    WINDOW_HEIGHT dw 165h                        ; 120 Pixels 480 => old value 180 <=
     WINDOW_BOUNDS DW 6h                         ; to check collesion early
 ;   ========== Status bar variables ==========
     STATUS_BAR_START_ROW_UPPER_PART db 22       ; the start of the status bar => Score part
@@ -15,7 +32,7 @@
     FLAG_lEFT_PLAYER_MESSAGE DB 00H             ; To check if a string was entered before
     FLAG_RIGHT_PLAYER_MESSAGE DB 00H
     TO_CONCATINATE_STRINGS DB ' : $'
-    SWITCH_BETWEEN_PLAYERS DB 'To switch the chat with the other player Press tab then F5','$'
+    SWITCH_BETWEEN_PLAYERS DB 'To switch the chat with the other player Press enter then F5, ESC => end chat','$'
 ;   ========== VARS TO CONTROL MOVEMENT ==========
     OLD_TIME DB 0                               ; old time
     BALL_ORIGINAL_X DW 140h                     ; X-position of the point of the center 
@@ -70,7 +87,7 @@
     ERROR_NAME_MSG     db  10, 9, 'Your name should start with a letter, Please enter it again: ','$'
     DASHED_LINE db '--------------------------------------------------------------------------------','$'
 ;   ========== Transition between level One and Two ==========
-    trans_msg          db  'LEVEL "2"'
+    trans_msg_level          db  'LEVEL "2"'
     trans_msg_LENGTH   EQU 9
 ;   ========== Main Screen variables ==========
     start_chatting_msg db  '*To Start chatting press F1','$'
@@ -111,8 +128,8 @@ START_GAME:
 CHECK_AGAIN_ON_KEYPRESSED:
         mov ah,00h                             ; get keypress from user
         int 16h
-        ;cmp ah, 03Bh                          ; Check if F1 was pressed (Scan code of F1 = 3B )
-        ;JZ CHATTING_MODE 
+        cmp ah, 03Bh                          ; Check if F1 was pressed (Scan code of F1 = 3B )
+        JZ CHATTING_MODE 
         cmp ah, 03Ch                           ; Check if F2 was pressed (Scan code of F2 = 3C )
         JZ GAME_MODE 
         cmp ah, 01h                            ; Check if ESC was pressed (Scan code of ESC = 01 )
@@ -123,6 +140,10 @@ CHECK_AGAIN_ON_KEYPRESSED:
     EXIT2:
 	     mov ah, 04ch
 		 int 21h
+
+CHATTING_MODE:
+     call CHAT_MODE
+     jmp CHECK_AGAIN_ON_KEYPRESSED
 
 GAME_MODE:
         call CLEAR_SCREEN
@@ -138,19 +159,20 @@ GAME_MODE:
 ;           clear screen to draw next frame
             call CLEAR_SCREEN                      ; we create the Illosion of movement by "Clear - move - draw - clear ...." 
             call STATUS_BAR
-            mov ah,01h                             ; get keypress from user to check if user pressed F4
+            mov ah,01h                          ; get keypress from user to check if user pressed F4
             int 16h
-            cmp ah, 03Eh                           ; Check if F4 was pressed (Scan code of F4 = 01 )
+            cmp ah, 03Eh                        ; Check if F4 was pressed (Scan code of F4 = 01 )
             JE START_GAME 
-
-            call MOVE_PADDLES                      ; move paddles
-            call DRAW_PADDLES                      ; draw paddles
 
             call MOV_BALL                          ; move the ball
             call DRAW_BALL                         ; draw the ball
 
             CAll CHECK_ELONGATE_CARD                ;call the Elongate card
             CAll CHECK_FREZE_CARD                  ;call the freeze card
+
+            call MOVE_PADDLES                      ; move paddles
+            
+            call DRAW_PADDLES                      ; draw paddles
 
             call DRAW_SCORE                        ; draw score
 
@@ -592,7 +614,6 @@ DRAW_SCORE ENDP
         MOVE_LEFT_PADDLE_UP:
             mov ax, PADDLE_VELOCITY                 ; how mush shall the paddle move in the Y-direction
             sub PADDLE_LEFT_Y, ax                   ; mov paddle
-;           check if paddle left Y is correct 
             mov ax, WINDOW_BOUNDS                   ; upper boundry
             cmp PADDLE_LEFT_Y, ax                   ; compares the y-position(paddel) ~ upper boundry
             JL FIX_LEFT_PADDLE_TOP_POSITION         ; IF(LESS) THEN {Fix the position of the left paddle;} ELSE {continue;}
@@ -655,7 +676,6 @@ DRAW_SCORE ENDP
         MOVE_RIGHT_PADDLE_DOWN:
             mov ax, PADDLE_VELOCITY                 ; how mush shall the paddle move in the Y-direction
             add PADDLE_RIGHT_Y, ax                  ; mov paddle
-;           check if the left paddle y is correct
             mov ax, WINDOW_HEIGHT                   ; Window height "the height of the screen"
             sub ax, WINDOW_BOUNDS                   ; the lower boundry
             sub ax, PADDLE_RIGHT_HEIGHT                   ; the height of the paddle
@@ -1259,7 +1279,7 @@ MAIN_MENU PROC NEAR
 	
 MAIN_MENU ENDP
 ;========================================================================== GAME OVER PROCEDURE ==========================================================================
-GAME_OVER PROC NEAR ; TODO: Fix poistion
+GAME_OVER PROC NEAR
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     mov si, @data                    ;moves to si the location in memory of the data segment
@@ -1291,7 +1311,7 @@ TRANSITION PROC NEAR
     mov cx, trans_msg_LENGTH         ;length of string
     mov dl, 38                       ;Column 0 > 39
     mov dh, 15                       ;Row    0 > 24
-    mov bp, offset trans_msg         ;mov bp the offset of the string
+    mov bp, offset trans_msg_level         ;mov bp the offset of the string
     int 10h
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     USER_INPUT:
@@ -1303,7 +1323,7 @@ TRANSITION PROC NEAR
     ret
 TRANSITION ENDP
 
-;===================================================================Elongation Card=====================================================================
+;=================================================================== Elongation Card =====================================================================
 CHECK_ELONGATE_CARD PROC NEAR
 ;   for the left paddle
 ;   FRIST CHECK IF ELONGATED BEFORE?
@@ -1389,6 +1409,241 @@ Leave_This_Proc:
 
 RET
 CHECK_FREZE_CARD ENDP
+
+;====================================================== CHAT MODULE =========================================================
+;====================================================== PORT INITIALIZATION =========================================================
+PORT_INTIALIZATION proc near
+    ;[1]: ask to send baud rate
+    mov dx, 3fbh        ; line control register
+    mov al, 10000000b   ; set divisor latch access bit
+    out dx, al      
+    ;[2]: send LSB of the baud rate
+    mov dx, 3f8h        ; Transmitter register
+    mov al, 0Ch         ; LSB of baud rate
+    out dx, al
+    ;[3]: send MSB of the baud rate
+    mov dx, 3f9h        ; MSB register
+    mov al, 00h         ; MSB of baud rate
+    out dx, al          ; baudrate = 000ch
+    ;[4]: set port configuration
+    mov dx, 3fbh        ; line control register
+    mov al, 00011011b   ; "0":   access to receive, transmit buffer
+                        ; "0":   set break disabled
+                        ; "011": even parity
+                        ; "0":   one stop bit
+                        ; "11":  8-bits data
+    out dx, al
+    ret
+PORT_INTIALIZATION endp
+
+;====================================================== SEND STRING =========================================================
+SEND_STRING PROC NEAR
+        mov ah, 01h                                 ; Get Keyboard Status
+        int 16h                                     ; Excute according to the above configurations "ah" - DON'T WAIT
+        JZ EXIT_PROC_SEND                           ; ZF = 0 if a key pressed
+        
+        CMP CURSER_ROW, 14
+        JNZ continue_sending
+        mov ah, 6	; function 6 Scroll Window Up
+        mov al, 1	; scroll by 1 line
+        mov bh, 0	; normal video attrbute
+        mov ch, 0   ; upper left Y
+        mov cl, 0	; upper left X
+        mov dh, 14	; lower right Y
+        mov dl, 79	; lower right x
+        int 10h
+        continue_sending:
+    ;   Set Curser
+        mov ah, 02h                     ; int 10h on ah = 02h => Set cursor position
+        mov dh, CURSER_ROW            	; row 1
+        mov dl, CURSER_COL         	    ; column 25
+        CMP CURSER_ROW, 14
+        JZ skip
+        add CURSER_ROW, 1
+        skip:
+        int 10h
+
+        ; by millania
+        mov ah, 01h 
+        int 16h 
+        cmp ah, 28 
+        JNE DUMMY_JUMP2 
+        mov ah, 00h
+        int 16h 
+        DUMMY_JUMP2:
+
+        mov ah, 0Ah                     ; get input from user "WAIT:"
+        mov dx, offset TRANS_MSG
+        int 21h
+
+        ; next line
+        mov ah, 09h     ; print dashed line
+        mov dx, offset DONE_SENDING 
+        int 21h
+
+    ;   sending the TRANS_MSG
+        mov ch, 00h
+        mov cl, TRANS_MSG[1]
+        mov DI, offset TRANS_MSG+2
+        ;[1]: check that the transmitter holding register is empty
+        AGAIN:
+            mov dx, 3fdh    ; line status register
+            in al, dx       ; read line status register
+            test al, 00100000b
+            JZ AGAIN        ; transmitter holding register NOT EMPTY
+        ;   transmitter holding register IS EMPTY
+            mov dx, 3f8h    ; trasmit data register
+            mov al, [DI]    ; send key Byte to the other PC
+            out dx, al      ; EXCUTE
+        ;   prepare to send next byte
+            INC DI
+        loop AGAIN
+        
+        AGAIN_Last:
+            mov dx, 3fdh    ; line status register
+            in al, dx       ; read line status register
+            test al, 00100000b
+            JZ AGAIN_Last        ; transmitter holding register NOT EMPTY
+        ;   transmitter holding register IS EMPTY
+            mov dx, 3f8h    ; trasmit data register
+            mov al, 24h     ; send key Byte to the other PC
+            out dx, al      ; EXCUTE
+        
+        EXIT_PROC_SEND:
+    ret
+SEND_STRING ENDP
+
+;====================================================== SEND STRING =========================================================
+;   This procedure helps in creating the Illosion of movement by clearing the screen 
+;CLEAR_SCREEN PROC NEAR
+;       set video mode, more information @"https://stanislavs.org/helppc/int_10-0.html"
+;    mov ah, 00h                                  ; set video mode
+;    mov al, 12h                                 ; configure video mode settings
+;    int 10h                                     ; Excute according to the above configurations "ah, al"
+;       set backgroud, more information @"https://stanislavs.org/helppc/int_10-b.html"
+;    mov ah, 0bh                                 ; Set color palette
+;    mov bh, 00h                                 ; palette color ID - to set background and border color
+;    mov bl, 00h                                 ; black color 
+;    int 10h                                     ; Excute according to the above configurations "ah, al, bh"
+;    ret
+;CLEAR_SCREEN ENDP
+
+;====================================================== SPLIT SCREEN =========================================================
+SPLIT_SCREEN PROC NEAR
+    ; split screen
+        mov ah, 02h
+        mov dh, 15     	; row 15
+        mov dl, 0       ; column 0
+        int 10h
+        mov ah, 09h     ; print dashed line
+        mov dx, offset DASHED_LINE 
+        int 21h
+    ret
+SPLIT_SCREEN ENDP
+
+;====================================================== RECIEVE BYTE =========================================================
+RECEIVE_BYTE PROC NEAR
+        mov dx, 3fdh    ; line status register
+        in al, dx       ; read line status register
+        test al, 1b
+        JZ EXIT_RECEIVE_PROC    ; not ready "received nothing"
+
+        mov DI, offset RECEIVE_MSG+2
+        RECEIVE:
+        mov dx, 3f8h    ; receive data register
+        in al, dx
+        cmp al, 24h
+        JZ DISP
+        mov [DI], al   ; STORE WHAT YOU RECEIVED
+        INC DI
+        ; check if something else have been received
+        CHK_AGAIN:
+        mov dx, 3fdh            ; line status register
+        in al, dx               ; read line status register
+        test al, 1b
+        JNZ RECEIVE             ; "received something"
+        jZ CHK_AGAIN
+
+        DISP:
+        CMP CURSER_ROW_REC, 24
+        JNZ continue_REC
+        mov ah, 6	; function 6 Scroll Window Up
+        mov al, 1	; scroll by 1 line
+        mov bh, 0	; normal video attrbute
+        mov ch, 16   ; upper left Y
+        mov cl, 0	; upper left X
+        mov dh, 24	; lower right Y
+        mov dl, 79	; lower right x
+        int 10h
+        continue_REC:
+    ;   Set Curser
+        mov ah, 02h                     ; int 10h on ah = 02h => Set cursor position
+        mov dh, CURSER_ROW_REC            	; row 1
+        mov dl, CURSER_COL_REC         	    ; column 25
+        CMP CURSER_ROW_REC, 24
+        JZ skip_REC
+        add CURSER_ROW_REC, 1
+        skip_REC:
+        int 10h
+
+
+        ; mov ah, 02h                     ; int 10h on ah = 02h => Set cursor position
+        ; mov dh, CURSER_ROW_REC          ; row 9
+        ; mov dl, CURSER_COL_REC        	; column 25
+        ; add CURSER_ROW_REC, 1
+        ; int 10h                         ; set curser position
+        
+        mov ah, 09
+        mov dx, offset RECEIVE_MSG+2
+        int 21h
+
+        
+        mov ch, 00h
+        mov cl, RECEIVE_MSG
+        mov DI, offset RECEIVE_MSG+2
+        REASSIGN:
+        mov al, REASSIGN_VAR
+        mov [DI], al
+        INC DI
+        loop REASSIGN
+
+        EXIT_RECEIVE_PROC:
+    ret
+RECEIVE_BYTE ENDP
+;====================================================== CHAT MODE =========================================================
+CHAT_MODE PROC NEAR 
+
+;   Port Initialization
+    call PORT_INTIALIZATION
+
+    call CLEAR_SCREEN
+    call SPLIT_SCREEN
+
+;   Displaying Welcom Message
+    mov ah, 02h                     ; int 10h on ah = 02h => Set cursor position
+    mov dh, 0            	        ; row 9
+    mov dl, 25         	            ; column 25
+    int 10h                         ; set curser position
+	mov ah, 09                      
+	mov dx, offset TRANS_MESSAGE    ; Print the welcom message
+	int 21h
+
+    CHK:
+        mov ah,01h                          ; get keypress from user to check if user pressed F4
+        int 16h
+        cmp ah, 61
+        JZ EXIT_CHAT  
+        call SEND_STRING
+        call RECEIVE_BYTE
+    jmp CHK
+
+    ;jmp $
+    EXIT_CHAT:
+    ret	
+    ;mov ah,4Ch
+    ;int 21h
+
+CHAT_MODE ENDP
 
 
 end main
