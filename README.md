@@ -1,7 +1,15 @@
 # 👋 Welcome to PongGame
-This is the **CMPN201** Microprocessor I Project
+This is the **CMPN201** Microprocessor I - Project
 
 [![assembly x86](https://img.shields.io/badge/assembly-x86-<COLOR>.svg)](https://shields.io/)
+
+To be better organized 🗃
+-------------------------
+I would appreciate using [Discussions](https://github.com/ZiadMansourM/CMPNPongGame/discussions) as a place for any suggestions, questions and mainly as a place for our future project-related-discussions instead of opening an issue, We hope that you:
+  * Ask questions you’re wondering about.
+  * Share ideas.
+  * Engage with other team members.
+  * Welcome others and are open-minded. Remember that this is a team we build together 💪.
 
 Setting the environment 🛠
 --------------------------
